@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quizzes — AtomMixAR Teacher</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Teacher console</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="teacher-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link active" href="teacher-quizzes.html"><span class="dot"></span> Quizzes</a>
+      <a class="nav-link" href="teacher-scores.html"><span class="dot"></span> Scores</a>
+     
+    
+      <a class="nav-link" href="teacher-reports.html"><span class="dot"></span> Reports</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Quizzes</h1>
+        <p>These appear in the AtomMixAR app for students to take.</p>
+      </div>
+      <button class="btn-primary" id="addBtn">New quiz</button>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Title</th><th>Questions</th><th>Author</th><th></th></tr></thead>
+        <tbody id="quizzesBody"></tbody>
+      </table>
+      <div class="empty hidden" id="emptyState">
+        <strong>No quizzes yet</strong>
+        Create your first quiz for students to take in the app.
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Add / edit quiz modal -->
+<div class="modal-backdrop hidden" id="quizModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <h2 id="modalTitle">New quiz</h2>
+      <button class="btn-ghost btn-sm" data-close>Close</button>
+    </div>
+    <div id="formAlert" class="alert alert-error"></div>
+    <form id="quizForm">
+      <div class="field">
+        <label for="qTitle">Quiz title</label>
+        <input type="text" id="qTitle" required>
+      </div>
+      <div class="field">
+        <label for="qDescription">Description (optional)</label>
+        <input type="text" id="qDescription">
+      </div>
+
+      <div id="questionsContainer"></div>
+      <button type="button" class="btn-ghost btn-sm" id="addQuestionBtn" style="margin-bottom:16px">+ Add question</button>
+
+      <div class="row">
+        <button type="submit" class="btn-primary">Save quiz</button>
+        <button type="button" class="btn-ghost" data-close>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/teacher-quizzes.js"></script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teachers — AtomMixAR Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Admin console</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="admin-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="admin-students.html"><span class="dot"></span> Students</a>
+      <a class="nav-link active" href="admin-teachers.html"><span class="dot"></span> Teachers</a>
+      <a class="nav-link" href="admin-imagetargets.html"><span class="dot"></span> Image Targets</a>
+      <a class="nav-link" href="admin-maintenance.html"><span class="dot"></span> Maintenance</a>
+      <a class="nav-link" href="admin-security.html"><span class="dot"></span> Security</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Staff accounts</h1>
+        <p>Approve registration requests and manage who can use the console.</p>
+      </div>
+      <button class="btn-primary" id="addBtn">Add staff</button>
+    </div>
+
+    <div id="pendingSection" class="hidden" style="margin-bottom:28px">
+      <h2>Pending requests</h2>
+      <div class="card mt-16" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Requested role</th><th></th></tr></thead>
+          <tbody id="pendingBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h2>Active staff</h2>
+    <div class="card mt-16" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
+        <tbody id="teachersBody"></tbody>
+      </table>
+      <div class="empty hidden" id="emptyState">
+        <strong>No staff accounts yet</strong>
+        Approve a registration request, or add someone directly.
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Add staff modal -->
+<div class="modal-backdrop hidden" id="teacherModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Add staff</h2>
+      <button class="btn-ghost btn-sm" data-close>Close</button>
+    </div>
+    <div id="formAlert" class="alert alert-error"></div>
+    <form id="teacherForm">
+      <div class="field">
+        <label for="tName">Full name</label>
+        <input type="text" id="tName" required>
+      </div>
+      <div class="field">
+        <label for="tEmail">Email</label>
+        <input type="email" id="tEmail" placeholder="name@cscqc.edu.ph" required>
+      </div>
+      <div class="field">
+        <label for="tRole">Role</label>
+        <select id="tRole">
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="tPassword">Temporary password</label>
+        <input type="text" id="tPassword" placeholder="At least 6 characters" required>
+      </div>
+      <p class="text-muted" style="margin-top:-8px">Share this password with them. They can sign in right away.</p>
+      <div class="row">
+        <button type="submit" class="btn-primary" id="saveBtn">Create account</button>
+        <button type="button" class="btn-ghost" data-close>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin-teachers.js"></script>
+</body>
+</html>

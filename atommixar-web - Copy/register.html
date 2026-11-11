@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register — AtomMixAR</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Staff console</div>
+      </div>
+    </div>
+
+    <h1>Request an account</h1>
+    <p>For teachers and admins. An admin approves each request before you can sign in.</p>
+
+    <div id="registerAlert" class="alert"></div>
+
+    <form id="registerForm">
+      <div class="field">
+        <label for="name">Full name</label>
+        <input type="text" id="name" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="email">School email</label>
+        <input type="email" id="email" placeholder="name@cscqc.edu.ph" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="role">I am registering as</label>
+        <select id="role">
+          <option value="teacher">Teacher</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" minlength="6" required autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label for="confirm">Confirm password</label>
+        <input type="password" id="confirm" minlength="6" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary" id="registerBtn">Request account</button>
+    </form>
+
+    <div class="login-foot">Already approved? <a href="login.html">Sign in</a></div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/register.js"></script>
+</body>
+</html>

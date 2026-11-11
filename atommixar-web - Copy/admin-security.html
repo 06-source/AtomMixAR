@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Privacy & Security — AtomMixAR Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Admin Main</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="admin-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="admin-students.html"><span class="dot"></span> Students</a>
+      <a class="nav-link" href="admin-teachers.html"><span class="dot"></span> Teachers</a>
+      <a class="nav-link" href="admin-imagetargets.html"><span class="dot"></span> Image Targets</a>
+      <a class="nav-link" href="admin-maintenance.html"><span class="dot"></span> Maintenance</a>
+      <a class="nav-link active" href="admin-security.html"><span class="dot"></span> Security</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Data Privacy & Security</h1>
+        <p>Who can see what, and how staff recover their accounts.</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="num" id="sAdmins">—</div><div class="label">Admins</div></div>
+      <div class="stat-tile"><div class="num" id="sTeachers">—</div><div class="label">Teachers</div></div>
+      <div class="stat-tile"><div class="num" id="sPending">—</div><div class="label">Pending requests</div></div>
+    </div>
+
+    <div class="card">
+      <h3>Role-based access</h3>
+      <p>Every page checks the signed-in role before it shows any data.</p>
+      <table>
+        <thead><tr><th>Data</th><th>Admin</th><th>Teacher</th></tr></thead>
+        <tbody>
+          <tr><td>Staff accounts</td><td>Manage</td><td>No access</td></tr>
+          <tr><td>Student roster</td><td>Manage</td><td>View</td></tr>
+          <tr><td>Quizzes</td><td>Manage</td><td>Manage</td></tr>
+          <tr><td>Quiz results</td><td>View, remove</td><td>View, remove</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:12px 0 0">Students only see their own results, inside the app.</p>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:20px 22px 8px"><h3>Account recovery</h3><p>Send a password reset link to a staff member's school email.</p><div id="sAlert" class="alert"></div></div>
+      <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead><tbody id="staffBody"></tbody></table>
+    </div>
+    <div class="card">
+      <h3>Data privacy</h3>
+      <p>Accounts, quiz records, learning progress and results are handled under the principles of the Data Privacy Act of 2012 (RA 10173).</p>
+      <ul class="text-muted" style="margin:0;padding-left:18px">
+        <li>Sign-in is limited to school emails (@cscqc.edu.ph).</li>
+        <li>Stored personal data: name, school email, student code, grade and quiz results.</li>
+        <li>Only admins can create, approve or revoke staff access.</li>
+      </ul>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin-security.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feedback Reports — AtomMixAR Teacher</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+<style>@media print{.sidebar,.no-print{display:none!important}.main{padding:0}*{color:#000!important;background:#fff!important;border-color:#999!important}}</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Teacher Main</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="teacher-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="teacher-quizzes.html"><span class="dot"></span> Quizzes</a>
+      <a class="nav-link" href="teacher-scores.html"><span class="dot"></span> Scores</a>
+      
+      
+      <a class="nav-link active" href="teacher-reports.html"><span class="dot"></span> Reports</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Feedback Reports</h1>
+        <p>Performance summary from quiz results, with strengths and topics that need more practice.</p>
+      </div>
+      <div class="row no-print"><select id="quizFilter" style="width:auto;min-width:180px"><option value="">All quizzes</option></select><button id="printBtn">Print report</button></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="num" id="statStudents">—</div><div class="label">Students</div></div>
+      <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Class average</div></div>
+      <div class="stat-tile"><div class="num" id="statSupport">—</div><div class="label">Need support (below 75%)</div></div>
+    </div>
+
+    <p class="text-muted" id="generated" style="font-size:.8rem"></p>
+    <h2>By student</h2>
+    <div class="card mt-16" style="padding:0; overflow:auto;">
+      <table>
+        <thead><tr><th>CSC ID</th><th>Attempts</th><th>Score</th><th>Best</th><th>Latest</th><th>Status</th><th>Strongest / needs practice</th></tr></thead>
+        <tbody id="studBody"></tbody>
+      </table>
+      <div class="empty hidden" id="emptyState"><strong>No results yet</strong>Reports appear once students finish quizzes in the app.</div>
+    </div>
+
+    <h2 style="margin-top:28px">By quiz</h2>
+    <div class="card mt-16" style="padding:0; overflow:auto;">
+      <table><thead><tr><th>Quiz</th><th>Attempts</th><th>Average</th><th>Below 75%</th></tr></thead><tbody id="quizBody"></tbody></table>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/teacher-reports.js"></script>
+<script src="js/scores-util.js"></script>
+</body>
+</html>

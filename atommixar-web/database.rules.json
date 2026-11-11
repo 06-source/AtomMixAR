@@ -1,0 +1,80 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "adminSetup": {
+      ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph')",
+      ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && !data.exists()"
+    },
+
+    "staff": {
+      ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && root.child('staff').child(auth.uid).child('role').val() == 'admin'",
+
+      "$uid": {
+        ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (auth.uid == $uid || root.child('staff').child(auth.uid).child('role').val() == 'admin')",
+
+        ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && root.child('staff').child(auth.uid).child('role').val() == 'admin'",
+
+        "name": {
+          ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && auth.uid == $uid"
+        },
+        "email": {
+          ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && auth.uid == $uid"
+        },
+        "requestedAt": {
+          ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && auth.uid == $uid"
+        },
+        "requestedRole": {
+          ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && auth.uid == $uid",
+          ".validate": "newData.val() == 'admin' || newData.val() == 'teacher'"
+        },
+
+        "role": {
+          ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && auth.uid == $uid && !root.child('adminSetup').exists() && newData.val() == 'admin'",
+          ".validate": "newData.val() == 'admin' || newData.val() == 'teacher'"
+        }
+      }
+    },
+
+    "users": {
+      ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (root.child('staff').child(auth.uid).child('role').val() == 'admin' || root.child('staff').child(auth.uid).child('role').val() == 'teacher')",
+
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    "students": {
+      ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (root.child('staff').child(auth.uid).child('role').val() == 'admin' || root.child('staff').child(auth.uid).child('role').val() == 'teacher')",
+
+      ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && root.child('staff').child(auth.uid).child('role').val() == 'admin'"
+    },
+
+    "quizzes": {
+      ".read": "auth != null",
+
+      ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (root.child('staff').child(auth.uid).child('role').val() == 'admin' || root.child('staff').child(auth.uid).child('role').val() == 'teacher')"
+    },
+
+    "scores": {
+      ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (root.child('staff').child(auth.uid).child('role').val() == 'admin' || root.child('staff').child(auth.uid).child('role').val() == 'teacher')",
+
+      ".write": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().endsWith('@cscqc.edu.ph') && (root.child('staff').child(auth.uid).child('role').val() == 'admin' || root.child('staff').child(auth.uid).child('role').val() == 'teacher')",
+
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    },
+
+    "mixHistory": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+
+        ".write": "auth != null && auth.uid == $uid"
+      }
+    }
+  }
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — AtomMixAR Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Admin Main</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link active" href="admin-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="admin-students.html"><span class="dot"></span> Students</a>
+      <a class="nav-link" href="admin-teachers.html"><span class="dot"></span> Teachers</a>
+      <a class="nav-link" href="admin-imagetargets.html"><span class="dot"></span> Image Targets</a>
+      <a class="nav-link" href="admin-maintenance.html"><span class="dot"></span> Maintenance</a>
+      <a class="nav-link" href="admin-security.html"><span class="dot"></span> Security</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Dashboard</h1>
+        <p>An overview of your AtomMixAR roster and staff.</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="num" id="statStudents">—</div><div class="label">Students on Login</div></div>
+      <div class="stat-tile"><div class="num" id="statTeachers">—</div><div class="label">Teacher accounts</div></div>
+      <div class="stat-tile"><div class="num" id="statQuizzes">—</div><div class="label">Quizzes published</div></div>
+      <div class="stat-tile"><div class="num" id="statResults">—</div><div class="label">Quiz attempts</div></div>
+      <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Average score</div></div>
+    </div>
+    
+  
+
+    <!-- NEW: start -->
+    <h2>Recent student activity</h2>
+    <div class="card mt-16" style="padding:0; overflow:hidden; margin-bottom:28px">
+      <table><thead><tr><th>Student</th><th>Quiz</th><th>Result</th><th>Date</th></tr></thead><tbody id="recentBody"></tbody></table>
+      <div class="empty hidden" id="recentEmpty"><strong>No activity yet</strong>Results appear here when students finish quizzes.</div>
+    </div>
+    <!-- NEW: end -->
+
+    <h2>Manage</h2>
+    <div class="link-grid mt-16">
+      <a class="link-card" href="admin-students.html">
+        <h3>Students</h3>
+        <p>Add, edit, or remove entries in the student Account.</p>
+      </a>
+      <a class="link-card" href="admin-teachers.html">
+        <h3>Teachers</h3>
+        <p>Create teacher logins and manage their access.</p>
+      </a>
+      <!-- NEW: start -->
+      <a class="link-card" href="admin-imagetargets.html">
+        <h3>Image Targets</h3>
+        <p>Manage the periodic table images for AR.</p>
+      </a>
+      <a class="link-card" href="admin-maintenance.html">
+        <h3>Maintenance</h3>
+        <p>Check records, clean up, and back up.</p>
+      </a>
+      <a class="link-card" href="admin-security.html">
+        <h3>Data Privacy & Security</h3>
+        <p>Access rules and account recovery.</p>
+      </a>
+      <!-- NEW: end -->
+    </div>
+       
+  </main>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scores-util.js"></script>
+<script>
+  AppAuth.requireRole("admin", function () {
+    db.ref("students").on("value", s => {
+      document.getElementById("statStudents").textContent = Object.keys(s.val() || {}).length;
+    });
+    
+    db.ref("staff").on("value", s => {
+      const staff = s.val() || {};
+      const teacherCount = Object.values(staff).filter(u => u.role === "teacher").length;
+      document.getElementById("statTeachers").textContent = teacherCount;
+    });
+    db.ref("quizzes").on("value", s => {
+      document.getElementById("statQuizzes").textContent = Object.keys(s.val() || {}).length;
+      // NEW: start
+    const esc = x => String(x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    db.ref("scores").on("value", snap => {
+      const rows = ScoreUtil.list(snap.val());
+      document.getElementById("statResults").textContent = rows.length;
+      const w = rows.filter(x => x.total);
+      document.getElementById("statAvg").textContent = w.length
+        ? Math.round(w.reduce((a, x) => a + x.score / x.total * 100, 0) / w.length) + "%" : "—";
+      const recent = rows.sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 5);
+      document.getElementById("recentEmpty").classList.toggle("hidden", recent.length > 0);
+      document.getElementById("recentBody").innerHTML = recent.map(x => `<tr>
+        <td>${esc(x.studentName || "—")}</td><td>${esc(x.quizTitle || "—")}</td>
+        <td>${x.total ? x.score + " / " + x.total : "—"}</td>
+        <td>${x.date ? new Date(x.date).toLocaleDateString() : "—"}</td></tr>`).join("");
+    });
+    // NEW: end
+    });
+  });
+</script>
+</body>
+</html>

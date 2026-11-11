@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — AtomMixAR</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body class="login-page">
+
+  <div class="login-card">
+
+    <div class="login-brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Staff Only</div>
+      </div>
+    </div>
+
+    <h1>Sign in</h1>
+    <p>Welcome Admins and Teachers.</p>
+
+    <div id="loginAlert" class="alert alert-error"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          required
+          autocomplete="username"
+        >
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          required
+          autocomplete="current-password"
+        >
+      </div>
+
+      <button type="submit" class="btn-primary" id="loginBtn">
+        Sign in
+      </button>
+    </form>
+
+    <div class="login-foot">
+      New teacher or admin?
+      <a href="register.html">Request an account</a>
+    </div>
+
+    <div
+      class="login-foot"
+      style="margin-top:8px; position:relative; z-index:5"
+    >
+      <a href="Forgotpassword.html" id="forgotLink">
+        Forgot your password?
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Firebase libraries -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+
+  <!-- Your existing Firebase configuration and authentication -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const alertBox = document.getElementById("loginAlert");
+    const btn = document.getElementById("loginBtn");
+    const forgotLink = document.getElementById("forgotLink");
+
+    function showMessage(message, success = false) {
+      alertBox.textContent = message;
+
+      alertBox.className =
+        "alert " +
+        (success ? "alert-ok" : "alert-error") +
+        " show";
+    }
+
+    // SIGN IN
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      alertBox.classList.remove("show");
+      btn.disabled = true;
+      btn.textContent = "Signing in...";
+
+      try {
+        if (
+          typeof AppAuth === "undefined" ||
+          typeof AppAuth.login !== "function" ||
+          typeof AppAuth.dashboardFor !== "function"
+        ) {
+          throw new Error(
+            "Authentication setup is missing. Check js/auth.js."
+          );
+        }
+
+        // Preserve Firebase authentication between pages.
+        await firebase.auth().setPersistence(
+          firebase.auth.Auth.Persistence.LOCAL
+        );
+
+        const email = document
+          .getElementById("email")
+          .value.trim();
+
+        const password = document
+          .getElementById("password")
+          .value;
+
+        // Sign in and get the account role.
+        const role = await AppAuth.login(email, password);
+
+        // Find the correct dashboard for the role.
+        const dashboard = AppAuth.dashboardFor(role);
+
+        if (
+          typeof dashboard !== "string" ||
+          dashboard.trim() === ""
+        ) {
+          throw new Error(
+            "Dashboard not configured for this account role."
+          );
+        }
+
+        // Navigate only after successful sign-in.
+        window.location.replace(dashboard);
+
+      } catch (err) {
+        console.error("Sign-in failed:", err);
+
+        showMessage(
+          (err.message || "Unable to sign in.")
+            .replace("Firebase: ", "")
+        );
+
+        btn.disabled = false;
+        btn.textContent = "Sign in";
+      }
+    });
+
+    // FORGOT PASSWORD
+    if (forgotLink) {
+      forgotLink.addEventListener("click", async function (e) {
+        e.preventDefault();
+
+        const email = document
+          .getElementById("email")
+          .value.trim();
+
+        if (!email) {
+          showMessage(
+            "Enter your email address first."
+          );
+          document.getElementById("email").focus();
+          return;
+        }
+
+        if (
+          typeof AppAuth.isAllowedEmail === "function" &&
+          !AppAuth.isAllowedEmail(email)
+        ) {
+          showMessage(
+            "Please enter your allowed school email."
+          );
+          return;
+        }
+
+        try {
+          await firebase.auth().sendPasswordResetEmail(email);
+
+          showMessage(
+            "If the account exists, a password reset email has been sent.",
+            true
+          );
+
+        } catch (err) {
+          console.error("Password reset failed:", err);
+
+          showMessage(
+            (err.message || "Unable to send reset email.")
+              .replace("Firebase: ", "")
+          );
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

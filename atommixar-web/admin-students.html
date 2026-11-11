@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Students — AtomMixAR Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Admin console</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="admin-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link active" href="admin-students.html"><span class="dot"></span> Students</a>
+      <a class="nav-link" href="admin-teachers.html"><span class="dot"></span> Teachers</a>
+      <a class="nav-link" href="admin-imagetargets.html"><span class="dot"></span> Image Targets</a>
+      <a class="nav-link" href="admin-maintenance.html"><span class="dot"></span> Maintenance</a>
+      <a class="nav-link" href="admin-security.html"><span class="dot"></span> Security</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Students</h1>
+        <p>Accounts created in the AtomMixAR game. Set each student's class here.</p>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead>
+          <tr><th>Student</th><th>Student code</th><th>Class</th><th></th></tr>
+        </thead>
+        <tbody id="studentsBody"></tbody>
+      </table>
+      <div class="empty hidden" id="emptyState">
+        <strong>No student accounts yet</strong>
+        Students appear here after they register inside the game.
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Student class modal -->
+<div class="modal-backdrop hidden" id="studentModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Student class</h2>
+      <button class="btn-ghost btn-sm" data-close>Close</button>
+    </div>
+    <div id="formAlert" class="alert alert-error"></div>
+    <form id="studentForm">
+      <div class="field">
+        <label for="sName">Name</label>
+        <input type="text" id="sName" readonly>
+      </div>
+      <div class="field">
+        <label for="sCode">Student code</label>
+        <input type="text" id="sCode" readonly>
+      </div>
+      <div class="field">
+        <label for="sGrade">Class / Grade</label>
+        <input type="text" id="sGrade" placeholder="e.g. Grade 8 - Newton">
+      </div>
+      <div class="row">
+        <button type="submit" class="btn-primary" id="saveBtn">Save</button>
+        <button type="button" class="btn-ghost" data-close>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin-students.js"></script>
+</body>
+</html>

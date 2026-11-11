@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Question Bank — AtomMixAR Teacher</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Teacher Main</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link" href="teacher-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="teacher-quizzes.html"><span class="dot"></span> Quizzes</a>
+      <a class="nav-link" href="teacher-scores.html"><span class="dot"></span> Scores</a>
+      <a class="nav-link active" href="teacher-questionbank.html"><span class="dot"></span> Question Bank</a>
+      
+      <a class="nav-link" href="teacher-reports.html"><span class="dot"></span> Reports</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Question Bank</h1>
+        <p>Every question from your quizzes in one place. Edit, copy to another quiz, or add new ones.</p>
+      </div>
+      <button class="btn-primary" id="addBtn">Add question</button>
+    </div>
+
+    <div class="row" style="margin-bottom:16px;flex-wrap:wrap">
+      <input type="text" id="search" placeholder="Search questions" style="flex:1;min-width:200px">
+      <select id="quizFilter" style="width:auto;min-width:180px"><option value="">All quizzes</option></select>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table>
+        <thead><tr><th>Question</th><th>Quiz</th><th>Correct answer</th><th></th></tr></thead>
+        <tbody id="qBody"></tbody>
+      </table>
+      <div class="empty hidden" id="emptyState"><strong>No questions found</strong>Add a question, or create a quiz first.</div>
+    </div>
+  </main>
+
+</div>
+
+<div class="modal-backdrop hidden" id="qModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h2 id="mTitle">Add question</h2><button class="btn-ghost btn-sm" data-close>Close</button></div>
+    <div id="formAlert" class="alert alert-error"></div>
+    <form id="qForm">
+      <div class="field"><label for="mQuiz">Quiz</label><select id="mQuiz"></select></div>
+      <div class="field"><label for="mText">Question</label><input type="text" id="mText" required></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="radio" name="mCorrect" value="0" style="width:auto" checked><input type="text" class="m-opt" placeholder="Option 1" required></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="radio" name="mCorrect" value="1" style="width:auto"><input type="text" class="m-opt" placeholder="Option 2" required></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="radio" name="mCorrect" value="2" style="width:auto"><input type="text" class="m-opt" placeholder="Option 3" required></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="radio" name="mCorrect" value="3" style="width:auto"><input type="text" class="m-opt" placeholder="Option 4" required></div>
+      <p class="text-muted" style="font-size:.78rem">Select the radio next to the correct answer.</p>
+      <div class="row"><button type="submit" class="btn-primary">Save question</button><button type="button" class="btn-ghost" data-close>Cancel</button></div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/teacher-questionbank.js"></script>
+</body>
+</html>

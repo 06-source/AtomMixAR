@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — AtomMixAR Teacher</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name">AtomMixAR</div>
+        <div class="brand-sub">Teacher console</div>
+      </div>
+    </div>
+    <nav class="nav-group">
+      <a class="nav-link active" href="teacher-dashboard.html"><span class="dot"></span> Dashboard</a>
+      <a class="nav-link" href="teacher-quizzes.html"><span class="dot"></span> Quizzes</a>
+      <a class="nav-link" href="teacher-scores.html"><span class="dot"></span> Scores</a>
+      
+      
+      <a class="nav-link" href="teacher-reports.html"><span class="dot"></span> Reports</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-chip">
+        <div class="user-avatar" id="chipAvatar">?</div>
+        <div class="user-meta">
+          <div class="user-name" id="chipName">…</div>
+          <div class="user-role" id="chipRole">…</div>
+        </div>
+        <button class="btn-ghost btn-sm" data-logout title="Sign out">Sign out</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Dashboard</h1>
+        <p>Your quizzes and how students are doing on them.</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-tile"><div class="num" id="statQuizzes">—</div><div class="label">Quizzes published</div></div>
+      <div class="stat-tile"><div class="num" id="statScores">—</div><div class="label">Results recorded</div></div>
+      <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Average score</div></div>
+    </div>
+
+    <h2>Manage</h2>
+    <div class="link-grid mt-16">
+      <a class="link-card" href="teacher-quizzes.html">
+        <h3>Quizzes</h3>
+        <p>Write and edit the quizzes students see in the app.</p>
+      </a>
+      <a class="link-card" href="teacher-scores.html">
+        <h3>Scores</h3>
+        <p>See how each student did on every quiz.</p>
+      </a>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scores-util.js"></script>
+<script>
+  AppAuth.requireRole("teacher", function () {
+    db.ref("quizzes").on("value", s => {
+      document.getElementById("statQuizzes").textContent = Object.keys(s.val() || {}).length;
+    });
+    db.ref("scores").on("value", s => {
+      const scores = ScoreUtil.list(s.val());
+      document.getElementById("statScores").textContent = scores.length;
+      const withPct = scores.filter(x => x.total);
+      const avg = withPct.length
+        ? Math.round(withPct.reduce((sum, x) => sum + (x.score / x.total) * 100, 0) / withPct.length)
+        : null;
+      document.getElementById("statAvg").textContent = avg === null ? "—" : avg + "%";
+    });
+  });
+</script>
+</body>
+</html>
