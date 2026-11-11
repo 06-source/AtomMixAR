@@ -1,6 +1,5 @@
-/** AtomMixAR — Teacher: feedback reports built from the scores the game saves.
- *  Teachers only see students from the sections the admin assigned to them. */
-AppAuth.requireRole("teacher", function (user, profile) {
+/** AtomMixAR — Teacher: feedback reports built from the scores the game saves. */
+AppAuth.requireRole("teacher", function () {
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const STRONG = 85, SUPPORT = 75;
@@ -8,13 +7,9 @@ AppAuth.requireRole("teacher", function (user, profile) {
   let scores = [];
   let users = {};
 
-  // Makikita lang ng teacher ang students sa hawak niyang section
-  const visible = s => AppAuth.canSeeSection(profile, users[s.uid] && users[s.uid].section);
-
-  // Para makuha ang email (CSC ID) at section ng bawat student
+  // Para makuha ang email (CSC ID) ng bawat student
   db.ref("users").on("value", snap => {
     users = snap.val() || {};
-    fillFilter();
     render();
   }, err => console.warn("Cannot read users:", err));
 
@@ -24,7 +19,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
 
   function fillFilter() {
     const cur = $("quizFilter").value;
-    const titles = [...new Set(scores.filter(visible).map(s => s.quizTitle).filter(Boolean))].sort();
+    const titles = [...new Set(scores.map(s => s.quizTitle).filter(Boolean))].sort();
     $("quizFilter").innerHTML = '<option value="">All quizzes</option>' + titles.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
     $("quizFilter").value = cur;
   }
@@ -42,7 +37,8 @@ AppAuth.requireRole("teacher", function (user, profile) {
     return (s.studentName || "Unknown").trim();
   }
 
-  // adds a "Section" column header automatically (no HTML change needed)
+
+  // NEW: adds a "Section" column header automatically (no HTML change needed)
   function addSectionHeader(tbodyEl, afterIndex) {
     const table = tbodyEl.closest("table");
     const headRow = table && table.querySelector("thead tr");
@@ -54,9 +50,9 @@ AppAuth.requireRole("teacher", function (user, profile) {
   }
 
   function render() {
-    addSectionHeader($("studBody"), 0);
+    addSectionHeader($("studBody"), 0);   // NEW
     const f = $("quizFilter").value;
-    const rows = scores.filter(s => s.total && visible(s) && (!f || s.quizTitle === f)).map(s => ({
+    const rows = scores.filter(s => s.total && (!f || s.quizTitle === f)).map(s => ({
       uid: s.uid,
       id: cscId(s),
       quiz: s.quizTitle || "Untitled",
@@ -72,7 +68,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
       const k = r.uid || r.id.toLowerCase();
       (byStudent[k] = byStudent[k] || {
         id: r.id,
-        section: (users[r.uid] && users[r.uid].section) || "—",
+        section: (users[r.uid] && users[r.uid].section) || "—",   // NEW
         list: []
       }).list.push(r);
       (byQuiz[r.quiz] = byQuiz[r.quiz] || []).push(r);
@@ -85,10 +81,10 @@ AppAuth.requireRole("teacher", function (user, profile) {
       const latest = st.list.slice().sort((a, b) => b.date - a.date)[0];
       return {
         id: st.id,
-        section: st.section,
+        section: st.section,   // NEW
         n: st.list.length,
         latest,
-        best: st.list.reduce((a, b) => (b.pct > a.pct ? b : a)),
+       best: st.list.reduce((a, b) => (b.pct > a.pct ? b : a)),
         top: qa[0],
         low: qa.length > 1 && qa[qa.length - 1][1] < qa[0][1] ? qa[qa.length - 1] : null
       };

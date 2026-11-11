@@ -1,12 +1,5 @@
 /**
  * AtomMixAR — Admin: students.
- *
- * Students register inside the Unity game, which saves them at
- *   users/{uid} = { username, email }
- * This page lists those accounts. The student code is the part of the school
- * email before the "@". The admin can add a class/grade label, which is saved at
- *   students/{uid} = { name, code, grade, updatedAt }
- * (name and code are copied from the game account, they are not edited here).
  */
 AppAuth.requireRole("admin", function () {
   const usersRef = db.ref("users");
@@ -18,7 +11,6 @@ AppAuth.requireRole("admin", function () {
   const modalTitle = document.getElementById("modalTitle");
   const alertBox = document.getElementById("formAlert");
 
-  // Students are created by the game, not here.
   const addBtn = document.getElementById("addBtn");
   if (addBtn) addBtn.classList.add("hidden");
 
@@ -30,7 +22,7 @@ AppAuth.requireRole("admin", function () {
     users = snap.val() || {};
     renderTable();
   }, err => {
-    console.error("Cannot read users (check the database rules):", err);
+    console.error("Cannot read users:", err);
     empty.classList.remove("hidden");
   });
 
@@ -43,20 +35,8 @@ AppAuth.requireRole("admin", function () {
     return String(u.email || "").split("@")[0];
   }
 
-  // NEW: adds a "Section" column header automatically (no HTML change needed)
-  function addSectionHeader(tbodyEl, afterIndex) {
-    const table = tbodyEl.closest("table");
-    const headRow = table && table.querySelector("thead tr");
-    if (!headRow || headRow.querySelector("[data-section-th]")) return;
-    const th = document.createElement("th");
-    th.textContent = "Section";
-    th.setAttribute("data-section-th", "1");
-    headRow.insertBefore(th, headRow.children[afterIndex + 1] || null);
-  }
-
   function renderTable() {
     const ids = Object.keys(users);
-    addSectionHeader(tbody, 1);   // NEW
     tbody.innerHTML = "";
     empty.classList.toggle("hidden", ids.length > 0);
 
@@ -64,15 +44,16 @@ AppAuth.requireRole("admin", function () {
       .sort((a, b) => (users[a].username || "").localeCompare(users[b].username || ""))
       .forEach(id => {
         const u = users[id] || {};
-        const grade = (roster[id] && roster[id].grade) || "";
+        // Kinukuha ang section mula sa roster kung na-edit na, o sa users kung wala pa
+        const section = (roster[id] && roster[id].section) || u.section || "";
+        
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${escapeHtml(u.username || "—")}</td>
           <td>${escapeHtml(codeOf(u) || "—")}</td>
-          <td>${escapeHtml(u.section || "—")}</td>
-          <td>${escapeHtml(grade || "—")}</td>
+          <td>${escapeHtml(section || "—")}</td>
           <td class="row">
-            <button class="btn-sm" data-edit="${escapeAttr(id)}">Set class</button>
+            <button class="btn-sm" data-edit="${escapeAttr(id)}">Edit Section</button>
           </td>`;
         tbody.appendChild(tr);
       });
@@ -87,7 +68,7 @@ AppAuth.requireRole("admin", function () {
     editingId = id;
     form.reset();
     hideAlert();
-    modalTitle.textContent = "Student class";
+    modalTitle.textContent = "Edit Student Section";
 
     const nameEl = document.getElementById("sName");
     const codeEl = document.getElementById("sCode");
@@ -95,7 +76,12 @@ AppAuth.requireRole("admin", function () {
     codeEl.value = codeOf(u);
     nameEl.readOnly = true;
     codeEl.readOnly = true;
-    document.getElementById("sGrade").value = (roster[id] && roster[id].grade) || "";
+    
+    // Ilagay sa input field ang kasalukuyang section
+    const sectionInput = document.getElementById("sSection") || document.getElementById("sGrade");
+    if (sectionInput) {
+      sectionInput.value = (roster[id] && roster[id].section) || u.section || "";
+    }
 
     modal.classList.remove("hidden");
   }
@@ -107,13 +93,14 @@ AppAuth.requireRole("admin", function () {
     if (!editingId || !users[editingId]) return;
 
     const u = users[editingId];
-    const grade = document.getElementById("sGrade").value.trim();
+    const sectionInput = document.getElementById("sSection") || document.getElementById("sGrade");
+    const section = sectionInput ? sectionInput.value.trim() : "";
 
     rosterRef.child(editingId)
       .update({
         name: u.username || "",
         code: codeOf(u),
-        grade,
+        section: section,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
       })
       .then(closeModal)

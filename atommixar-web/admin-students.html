@@ -42,14 +42,14 @@
     <div class="topbar">
       <div>
         <h1>Students</h1>
-        <p>Accounts created in the AtomMixAR game. Set each student's class here.</p>
+        <p>Accounts created in the AtomMixAR game. Set each student's section here.</p>
       </div>
     </div>
 
     <div class="card" style="padding:0; overflow:hidden;">
       <table>
         <thead>
-          <tr><th>Student</th><th>Student code</th><th>Class</th><th></th></tr>
+          <tr><th>Student</th><th>Student code</th><th>Section</th><th></th></tr>
         </thead>
         <tbody id="studentsBody"></tbody>
       </table>
@@ -62,11 +62,11 @@
 
 </div>
 
-<!-- Student class modal -->
+<!-- Student section modal -->
 <div class="modal-backdrop hidden" id="studentModal">
   <div class="modal">
     <div class="modal-head">
-      <h2 id="modalTitle">Student class</h2>
+      <h2 id="modalTitle">Edit Student Section</h2>
       <button class="btn-ghost btn-sm" data-close>Close</button>
     </div>
     <div id="formAlert" class="alert alert-error"></div>
@@ -80,8 +80,8 @@
         <input type="text" id="sCode" readonly>
       </div>
       <div class="field">
-        <label for="sGrade">Class / Grade</label>
-        <input type="text" id="sGrade" placeholder="e.g. Grade 8 - Newton">
+        <label for="sGrade">Section</label>
+        <input type="text" id="sGrade" placeholder="e.g. GR.10 MATTHEW">
       </div>
       <div class="row">
         <button type="submit" class="btn-primary" id="saveBtn">Save</button>
