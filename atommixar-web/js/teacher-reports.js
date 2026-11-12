@@ -1,11 +1,16 @@
-/** AtomMixAR — Teacher: feedback reports built from the scores the game saves. */
-AppAuth.requireRole("teacher", function () {
+/**
+ * AtomMixAR — Teacher: feedback reports built from the scores the game saves.
+ * A teacher whose sections were set by the admin only sees students
+ * from those sections.
+ */
+AppAuth.requireRole("teacher", function (user, profile) {
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const STRONG = 85, SUPPORT = 75;
   const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
   let scores = [];
   let users = {};
+  let roster = {};
 
   // Para makuha ang email (CSC ID) ng bawat student
   db.ref("users").on("value", snap => {
@@ -13,13 +18,31 @@ AppAuth.requireRole("teacher", function () {
     render();
   }, err => console.warn("Cannot read users:", err));
 
-  ScoreUtil.watch(list => { scores = list; fillFilter(); render(); });
+  // Section ng bawat student (sinesave ng admin sa students/{uid}/section)
+  db.ref("students").on("value", snap => {
+    roster = snap.val() || {};
+    render();
+  }, err => console.warn("Cannot read students (check database rules):", err));
+
+  ScoreUtil.watch(list => { scores = list; render(); });
   $("quizFilter").addEventListener("change", render);
   $("printBtn").addEventListener("click", () => window.print());
 
-  function fillFilter() {
+  // Section: galing sa roster (admin), fallback sa users/{uid}/section
+  function sectionOfUid(uid) {
+    const r = roster[uid];
+    const u = users[uid];
+    return (r && r.section) || (u && u.section) || "";
+  }
+
+  // Makikita lang ng teacher ang students sa sections na hawak niya
+  function isVisible(s) {
+    return AppAuth.canSeeSection(profile, sectionOfUid(s.uid));
+  }
+
+  function fillFilter(visibleScores) {
     const cur = $("quizFilter").value;
-    const titles = [...new Set(scores.map(s => s.quizTitle).filter(Boolean))].sort();
+    const titles = [...new Set(visibleScores.map(s => s.quizTitle).filter(Boolean))].sort();
     $("quizFilter").innerHTML = '<option value="">All quizzes</option>' + titles.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
     $("quizFilter").value = cur;
   }
@@ -37,8 +60,7 @@ AppAuth.requireRole("teacher", function () {
     return (s.studentName || "Unknown").trim();
   }
 
-
-  // NEW: adds a "Section" column header automatically (no HTML change needed)
+  // adds a "Section" column header automatically (no HTML change needed)
   function addSectionHeader(tbodyEl, afterIndex) {
     const table = tbodyEl.closest("table");
     const headRow = table && table.querySelector("thead tr");
@@ -50,9 +72,14 @@ AppAuth.requireRole("teacher", function () {
   }
 
   function render() {
-    addSectionHeader($("studBody"), 0);   // NEW
+    addSectionHeader($("studBody"), 0);
+
+    // Section filter muna bago ang lahat
+    const visibleScores = scores.filter(isVisible);
+    fillFilter(visibleScores);
+
     const f = $("quizFilter").value;
-    const rows = scores.filter(s => s.total && (!f || s.quizTitle === f)).map(s => ({
+    const rows = visibleScores.filter(s => s.total && (!f || s.quizTitle === f)).map(s => ({
       uid: s.uid,
       id: cscId(s),
       quiz: s.quizTitle || "Untitled",
@@ -68,7 +95,7 @@ AppAuth.requireRole("teacher", function () {
       const k = r.uid || r.id.toLowerCase();
       (byStudent[k] = byStudent[k] || {
         id: r.id,
-        section: (users[r.uid] && users[r.uid].section) || "—",   // NEW
+        section: sectionOfUid(r.uid) || "—",
         list: []
       }).list.push(r);
       (byQuiz[r.quiz] = byQuiz[r.quiz] || []).push(r);
@@ -81,10 +108,10 @@ AppAuth.requireRole("teacher", function () {
       const latest = st.list.slice().sort((a, b) => b.date - a.date)[0];
       return {
         id: st.id,
-        section: st.section,   // NEW
+        section: st.section,
         n: st.list.length,
         latest,
-       best: st.list.reduce((a, b) => (b.pct > a.pct ? b : a)),
+        best: st.list.reduce((a, b) => (b.pct > a.pct ? b : a)),
         top: qa[0],
         low: qa.length > 1 && qa[qa.length - 1][1] < qa[0][1] ? qa[qa.length - 1] : null
       };

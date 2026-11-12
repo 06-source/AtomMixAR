@@ -25,12 +25,19 @@ const AppAuth = (function () {
 
   // Mga section ng school
   const SECTIONS = [
-    "GR.10 MATTHEW", "GR.10 PRIO", "GR.11-TECHPRO", "GR.11-ACAD-ASSH",
+    "GR.10 MATTHEW", "GR.10 PIO", "GR.11-TECHPRO", "GR.11-ACAD-ASSH",
     "GR.11-ACAD-BE", "GR.11-ACAD-STEM-ET", "GR.11-ACAD-STEM MH",
     "GR.12 ABM", "GR.12 HE", "GR.12 HUMSS", "GR.12 STEM A", "GR.12 STEM B"
   ];
 
-  const normSection = s => String(s || "").toUpperCase().replace(/\s+/g, " ").trim();
+  // Inaayos ang pagkakasulat para magtugma kahit iba ang laki ng letra o dami ng espasyo.
+  // Ang lumang "PRIO" ay awtomatikong tinatrato bilang "PIO", kaya hindi mawawala
+  // ang mga section na nai-save na dati.
+  const normSection = s => String(s || "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\bPRIO\b/, "PIO");
 
   // Mga section na hawak ng teacher: staff/{uid}/sections = ["GR.12 HE", ...]
   function teacherSections(profile) {

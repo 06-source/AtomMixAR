@@ -22,7 +22,6 @@
       <a class="nav-link active" href="admin-dashboard.html"><span class="dot"></span> Dashboard</a>
       <a class="nav-link" href="admin-students.html"><span class="dot"></span> Students</a>
       <a class="nav-link" href="admin-teachers.html"><span class="dot"></span> Teachers</a>
-      <a class="nav-link" href="admin-imagetargets.html"><span class="dot"></span> Image Targets</a>
       <a class="nav-link" href="admin-maintenance.html"><span class="dot"></span> Maintenance</a>
       <a class="nav-link" href="admin-security.html"><span class="dot"></span> Security</a>
     </nav>
@@ -53,8 +52,8 @@
       <div class="stat-tile"><div class="num" id="statResults">—</div><div class="label">Quiz attempts</div></div>
       <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Average score</div></div>
     </div>
-    
-  
+
+
 
     <!-- NEW: start -->
     <h2>Recent student activity</h2>
@@ -75,10 +74,6 @@
         <p>Create teacher logins and manage their access.</p>
       </a>
       <!-- NEW: start -->
-      <a class="link-card" href="admin-imagetargets.html">
-        <h3>Image Targets</h3>
-        <p>Manage the periodic table images for AR.</p>
-      </a>
       <a class="link-card" href="admin-maintenance.html">
         <h3>Maintenance</h3>
         <p>Check records, clean up, and back up.</p>
@@ -89,7 +84,7 @@
       </a>
       <!-- NEW: end -->
     </div>
-       
+
   </main>
 
 </div>
@@ -105,7 +100,7 @@
     db.ref("students").on("value", s => {
       document.getElementById("statStudents").textContent = Object.keys(s.val() || {}).length;
     });
-    
+
     db.ref("staff").on("value", s => {
       const staff = s.val() || {};
       const teacherCount = Object.values(staff).filter(u => u.role === "teacher").length;
