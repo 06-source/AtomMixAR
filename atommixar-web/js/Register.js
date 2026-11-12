@@ -1,7 +1,7 @@
 /**
  * AtomMixAR — Register (teachers & admins).
  * Creates the Firebase Auth login, then saves a REQUEST at /staff/{uid}:
- *   { name, email, requestedRole, requestedAt }   <- note: no "role"
+ *   { name, email, requestedRole, requestedAt, sectionsRestricted? }   <- note: no "role"
  * Nobody gets dashboard access until an admin approves the request
  * (admin-teachers.html), which is what sets the real "role".
  */
@@ -21,7 +21,11 @@
       "auth/invalid-email": "That email address isn't valid.",
       "auth/network-request-failed": "Network problem. Check your connection and try again."
     };
-    return map[err.code] || (err.message || "Something went wrong.").replace("Firebase: ", "");
+    if (map[err.code]) return map[err.code];
+    if (/permission_denied/i.test(err.code || "") || /permission_denied/i.test(err.message || "")) {
+      return "Database permission denied. Check the Realtime Database rules (see F12 → Console for the path).";
+    }
+    return (err.message || "Something went wrong.").replace("Firebase: ", "");
   }
 
   form.addEventListener("submit", e => {
@@ -57,8 +61,12 @@
         if (err.code !== "auth/email-already-in-use") throw err;
         // The email already has a login (for example a student login from the game).
         // Let the person prove it's theirs by signing in with that password.
-        return auth.signInWithEmailAndPassword(email, password).catch(() => {
-          throw new Error("This email already has an account with a different password. Enter the password you already use.");
+        return auth.signInWithEmailAndPassword(email, password).catch(e => {
+          console.error("Sign-in fallback failed:", e.code, e);
+          throw new Error(
+            "This email already has an account, but the password didn't match (" + e.code + "). " +
+            "Enter the password you already use."
+          );
         });
       })
       .then(cred => {
@@ -71,6 +79,7 @@
           }
           return db.ref("adminSetup").once("value").then(setupSnap => {
             const ts = firebase.database.ServerValue.TIMESTAMP;
+
             if (role === "admin" && !setupSnap.exists()) {
               // No admin exists yet: the FIRST person to register as Admin is approved
               // automatically. The database rules close this window right after.
@@ -81,14 +90,14 @@
               updates["adminSetup"] = { uid: user.uid, at: ts };
               return db.ref().update(updates).then(() => "first-admin");
             }
-            // update() (not set) so we never wipe anything the game stored on this user
-            return db.ref("staff/" + user.uid)
-              .update({
-                name, email, requestedRole: role, requestedAt: ts,
-                // new teachers only see the sections the admin assigns to them
-                sectionsRestricted: role === "teacher" ? true : null
-              })
-              .then(() => "request");
+
+            // update() (not set) so we never wipe anything the game stored on this user.
+            // Only send fields the rules allow; no nulls.
+            const req = { name, email, requestedRole: role, requestedAt: ts };
+            // new teachers only see the sections the admin assigns to them
+            if (role === "teacher") req.sectionsRestricted = true;
+
+            return db.ref("staff/" + user.uid).update(req).then(() => "request");
           });
         }).then(outcome => auth.signOut().then(() => outcome));
       })
@@ -100,6 +109,7 @@
           : "Request sent! An admin needs to approve it before you can sign in.", true);
       })
       .catch(err => {
+        console.error(err);
         showAlert(friendly(err));
         auth.signOut().catch(() => {});
       })
