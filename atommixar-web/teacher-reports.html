@@ -45,7 +45,13 @@
         <h1>Feedback Reports</h1>
         <p>Performance summary from quiz results, with strengths and topics that need more practice.</p>
       </div>
-      <div class="row no-print"><select id="quizFilter" style="width:auto;min-width:180px"><option value="">All quizzes</option></select><button id="printBtn">Print report</button></div>
+      <div class="row no-print" style="flex-wrap:wrap">
+        <input type="search" id="searchBox" placeholder="Search CSC ID or section…" autocomplete="off" style="width:auto;min-width:220px">
+        <select id="quizFilter" style="width:auto;min-width:180px"><option value="">All quizzes</option></select>
+        <button id="printBtn">Print report</button>
+        <button id="pdfBtn">Save as PDF</button>
+        <button id="xlsBtn">Save as Excel</button>
+      </div>
     </div>
 
     <div class="stat-grid">
@@ -56,6 +62,7 @@
 
     <p class="text-muted" id="generated" style="font-size:.8rem"></p>
     <h2>By student</h2>
+    <p class="text-muted" id="countNote" style="font-size:.85rem;margin:6px 0 0"></p>
     <div class="card mt-16" style="padding:0; overflow:auto;">
       <table>
         <thead><tr><th>CSC ID</th><th>Attempts</th><th>Score</th><th>Best</th><th>Latest</th><th>Status</th><th>Strongest / needs practice</th></tr></thead>
@@ -75,6 +82,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/teacher-reports.js"></script>

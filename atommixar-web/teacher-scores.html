@@ -44,16 +44,21 @@
         <h1>Scores</h1>
         <p>Results recorded by the AtomMixAR app as students finish quizzes.</p>
       </div>
-      <select id="quizFilter" style="width:auto; min-width:180px">
-        <option value="">All quizzes</option>
-      </select>
+      <div class="row" style="flex-wrap:wrap">
+        <input type="search" id="searchBox" placeholder="Search CSC ID, section or quiz…" autocomplete="off" style="width:auto;min-width:260px">
+        <select id="quizFilter" style="width:auto; min-width:180px">
+          <option value="">All quizzes</option>
+        </select>
+      </div>
     </div>
 
     <div class="stat-grid">
-      <div class="stat-tile"><div class="num" id="statCount">—</div><div class="label">Results shown</div></div>
+      <div class="stat-tile"><div class="num" id="statCount">—</div><div class="label">Results</div></div>
       <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Average score</div></div>
       <div class="stat-tile"><div class="num" id="statTop" style="font-size:1.05rem">—</div><div class="label">Top result</div></div>
     </div>
+
+    <p class="text-muted" id="countNote" style="font-size:.85rem;margin:0 0 10px"></p>
 
     <div class="card" style="padding:0; overflow:hidden;">
       <table>

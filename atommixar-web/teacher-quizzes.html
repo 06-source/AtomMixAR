@@ -42,9 +42,8 @@
     <div class="topbar">
       <div>
         <h1>Quizzes</h1>
-        <p>These appear in the AtomMixAR app for students to take.</p>
+        <p>These appear in the AtomMixAR app for students to take. Edit the questions and answers here.</p>
       </div>
-      <button class="btn-primary" id="addBtn">New quiz</button>
     </div>
 
     <div class="card" style="padding:0; overflow:hidden;">
@@ -53,19 +52,19 @@
         <tbody id="quizzesBody"></tbody>
       </table>
       <div class="empty hidden" id="emptyState">
-        <strong>No quizzes yet</strong>
-        Create your first quiz for students to take in the app.
+        <strong>No quizzes found</strong>
+        The quizzes will appear here once they exist in the database.
       </div>
     </div>
   </main>
 
 </div>
 
-<!-- Add / edit quiz modal -->
+<!-- Edit quiz modal -->
 <div class="modal-backdrop hidden" id="quizModal">
   <div class="modal" style="max-width:560px">
     <div class="modal-head">
-      <h2 id="modalTitle">New quiz</h2>
+      <h2 id="modalTitle">Edit quiz</h2>
       <button class="btn-ghost btn-sm" data-close>Close</button>
     </div>
     <div id="formAlert" class="alert alert-error"></div>
@@ -80,7 +79,6 @@
       </div>
 
       <div id="questionsContainer"></div>
-      <button type="button" class="btn-ghost btn-sm" id="addQuestionBtn" style="margin-bottom:16px">+ Add question</button>
 
       <div class="row">
         <button type="submit" class="btn-primary">Save quiz</button>

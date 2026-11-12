@@ -8,15 +8,21 @@
  * SECTION FILTER: a teacher whose sections were set by the admin
  * (staff/{uid}/sections) only sees students from those sections.
  * A student's section is set by the admin in students/{uid}/section.
+ *
+ * LIMIT: kapag walang search, pinakabagong 20 lang ang ipinapakita.
  */
 AppAuth.requireRole("teacher", function (user, profile) {
   const scoresRef = db.ref("scores");
   const tbody = document.getElementById("scoresBody");
   const empty = document.getElementById("emptyState");
   const filterSelect = document.getElementById("quizFilter");
+  const searchBox = document.getElementById("searchBox");
+  const countNote = document.getElementById("countNote");
   const statAvg = document.getElementById("statAvg");
   const statCount = document.getElementById("statCount");
   const statTop = document.getElementById("statTop");
+
+  const LIMIT = 20;
 
   let scores = {};
   let users = {};
@@ -41,6 +47,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
   });
 
   filterSelect.addEventListener("change", renderTable);
+  if (searchBox) searchBox.addEventListener("input", renderTable);
 
   // CSC ID = bahagi ng email bago ang @
   function cscId(s) {
@@ -88,24 +95,42 @@ AppAuth.requireRole("teacher", function (user, profile) {
     populateFilter(visibleScores);
 
     const filter = filterSelect.value;
-    const rows = Object.entries(scores)
+    const q = searchBox ? searchBox.value.trim().toLowerCase() : "";
+
+    // Lahat ng tugma sa quiz filter at search, pinakabago muna
+    const matches = Object.entries(scores)
       .filter(([, s]) => isVisible(s))
       .filter(([, s]) => !filter || s.quizTitle === filter)
+      .filter(([, s]) => !q || [cscId(s), sectionOf(s), s.quizTitle || ""].join(" ").toLowerCase().includes(q))
       .sort(([, a], [, b]) => (b.date || 0) - (a.date || 0));
+
+    // Walang search: pinakabagong 20 lang. May search: lahat ng tugma.
+    const rows = q ? matches : matches.slice(0, LIMIT);
+
+    if (countNote) {
+      if (!matches.length) countNote.textContent = "";
+      else if (q) countNote.textContent = matches.length + " result" + (matches.length === 1 ? "" : "s") + " match “" + searchBox.value.trim() + "”";
+      else if (matches.length > LIMIT) countNote.textContent = "Showing the latest " + LIMIT + " of " + matches.length + " results. Use search to find anyone else.";
+      else countNote.textContent = matches.length + " result" + (matches.length === 1 ? "" : "s");
+    }
 
     tbody.innerHTML = "";
     empty.classList.toggle("hidden", rows.length > 0);
 
+    // Stats: sa lahat ng tugma, hindi lang sa 20 na nakikita
     let sumPct = 0, withPct = 0, best = null;
-    rows.forEach(([id, s]) => {
+    matches.forEach(([, s]) => {
       const pct = s.total ? Math.round((s.score / s.total) * 100) : null;
-      const sid = cscId(s);
-
       if (pct !== null) {
         sumPct += pct;
         withPct++;
-        if (!best || pct > best.pct) best = { id: sid, pct, quiz: s.quizTitle || "" };
+        if (!best || pct > best.pct) best = { id: cscId(s), pct, quiz: s.quizTitle || "" };
       }
+    });
+
+    rows.forEach(([id, s]) => {
+      const pct = s.total ? Math.round((s.score / s.total) * 100) : null;
+      const sid = cscId(s);
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
@@ -123,7 +148,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
         if (confirm("Remove this score entry?")) scoresRef.child(b.dataset.delete).remove();
       }));
 
-    statCount.textContent = rows.length;
+    statCount.textContent = matches.length;
     statAvg.textContent = withPct ? Math.round(sumPct / withPct) + "%" : "—";
     statTop.textContent = best
       ? `${best.id} (${best.pct}%)${best.quiz ? " · " + best.quiz : ""}`

@@ -52,6 +52,8 @@
       <div class="stat-tile"><div class="num" id="statAvg">—</div><div class="label">Average score</div></div>
     </div>
 
+    <div class="chart-grid" id="chartGrid"></div>
+
     <h2>Manage</h2>
     <div class="link-grid mt-16">
       <a class="link-card" href="teacher-quizzes.html">
@@ -72,21 +74,60 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/scores-util.js"></script>
+<script src="js/dash-charts.js"></script>
 <script>
-  AppAuth.requireRole("teacher", function () {
-    db.ref("quizzes").on("value", s => {
-      document.getElementById("statQuizzes").textContent = Object.keys(s.val() || {}).length;
-    });
-    db.ref("scores").on("value", s => {
-      const scores = ScoreUtil.list(s.val());
-      document.getElementById("statScores").textContent = scores.length;
-      const withPct = scores.filter(x => x.total);
-      const avg = withPct.length
-        ? Math.round(withPct.reduce((sum, x) => sum + (x.score / x.total) * 100, 0) / withPct.length)
-        : null;
-      document.getElementById("statAvg").textContent = avg === null ? "—" : avg + "%";
-    });
+  AppAuth.requireRole("teacher", function (user, profile) {
+    const $ = id => document.getElementById(id);
+    const STRONG = 85, SUPPORT = 75;
+
+    $("chartGrid").innerHTML =
+      DashCharts.card("Student performance (latest score)", "chStatus") +
+      DashCharts.card("Average score per quiz", "chQuizAvg") +
+      DashCharts.card("Average score per section", "chSection") +
+      DashCharts.card("Quiz attempts (last 7 days)", "chAttempts");
+
+    let users = {}, roster = {}, quizzes = {}, all = [];
+    const sectionOf = uid => (roster[uid] && roster[uid].section) || (users[uid] && users[uid].section) || "";
+
+    function render() {
+      // Only students in the sections this teacher handles
+      const rows = all.filter(r => AppAuth.canSeeSection(profile, sectionOf(r.uid)));
+
+      $("statQuizzes").textContent = Object.keys(quizzes).length;
+      $("statScores").textContent = rows.length;
+      const w = rows.filter(x => x.total);
+      $("statAvg").textContent = w.length
+        ? Math.round(w.reduce((s, x) => s + x.score / x.total * 100, 0) / w.length) + "%" : "—";
+
+      // Latest result per student -> Strong / On track / Needs support
+      const latest = {};
+      w.forEach(r => {
+        const k = r.uid || r.studentName;
+        if (!latest[k] || (r.date || 0) > (latest[k].date || 0)) latest[k] = r;
+      });
+      const pcts = Object.values(latest).map(r => r.score / r.total * 100);
+      DashCharts.draw("chStatus", "doughnut", ["Strong (85%+)", "On track (75–84%)", "Needs support (<75%)"],
+        [pcts.filter(p => p >= STRONG).length,
+         pcts.filter(p => p >= SUPPORT && p < STRONG).length,
+         pcts.filter(p => p < SUPPORT).length],
+        { colors: [DashCharts.COLORS[4], DashCharts.COLORS[0], DashCharts.COLORS[1]] });
+
+      const q = DashCharts.avgByKey(rows, r => r.quizTitle);
+      DashCharts.draw("chQuizAvg", "bar", q.labels, q.values, { horizontal: true, pct: true, color: DashCharts.COLORS[2] });
+
+      const s = DashCharts.avgByKey(rows, r => sectionOf(r.uid) || "No section");
+      DashCharts.draw("chSection", "bar", s.labels, s.values, { pct: true, color: DashCharts.COLORS[0] });
+
+      const d = DashCharts.lastDays(rows, 7);
+      DashCharts.draw("chAttempts", "line", d.labels, d.counts, { color: DashCharts.COLORS[1] });
+    }
+
+    db.ref("users").on("value", s => { users = s.val() || {}; render(); });
+    db.ref("students").on("value", s => { roster = s.val() || {}; render(); });
+    db.ref("quizzes").on("value", s => { quizzes = s.val() || {}; render(); });
+    ScoreUtil.watch(list => { all = list; render(); });
   });
 </script>
 </body>

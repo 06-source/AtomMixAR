@@ -1,5 +1,8 @@
 /**
- * AtomMixAR — Teacher: author quizzes (in the format the Unity game reads).
+ * AtomMixAR — Teacher: edit quizzes (in the format the Unity game reads).
+ *
+ * Fixed na ang 3 quiz (10 tanong bawat isa), kaya edit lang ang pwede:
+ * walang New quiz, Delete, Add question o Remove question.
  *
  * quizzes/{quizID} = { title, description, type, createdBy, createdByName, createdAt,
  *   questions: { q0: { question, optionA, optionB, optionC, optionD, correctAnswer (0-3) } } }
@@ -19,16 +22,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
 
   let quizzes = {};
   let editingId = null;
-  let qCounter = 0;
   let guessMode = false;
-
-  // "Guess the Element" switch, placed above the questions
-  const modeWrap = document.createElement("label");
-  modeWrap.style.cssText = "display:flex;gap:8px;align-items:center;margin:8px 0";
-  modeWrap.innerHTML = '<input type="checkbox"> <span>Guess the Element quiz (3 clues per question)</span>';
-  questionsBox.parentNode.insertBefore(modeWrap, questionsBox);
-  const guessToggle = modeWrap.querySelector("input");
-  guessToggle.addEventListener("change", () => { guessMode = guessToggle.checked; applyMode(); });
 
   quizzesRef.on("value", snap => {
     quizzes = snap.val() || {};
@@ -41,13 +35,15 @@ AppAuth.requireRole("teacher", function (user, profile) {
     const options = ["optionA", "optionB", "optionC", "optionD"].map((k, i) =>
       q[k] !== undefined ? String(q[k]) : String((q.options || [])[i] || ""));
     const c = q.correctAnswer !== undefined ? q.correctAnswer : q.correctIndex;
+    let correct = Number(c) || 0;
+    if (correct < 0 || correct > 3) correct = 0;
     return {
       question: q.question !== undefined ? String(q.question) : String(q.text || ""),
       clue1: String(q.clue1 || ""),
       clue2: String(q.clue2 || ""),
       clue3: String(q.clue3 || ""),
       options,
-      correct: Number(c) || 0
+      correct
     };
   }
 
@@ -74,70 +70,65 @@ AppAuth.requireRole("teacher", function (user, profile) {
           <td>${q.createdByName ? escapeHtml(q.createdByName) : "—"}</td>
           <td class="row">
             <button class="btn-sm" data-edit="${escapeAttr(id)}">Edit</button>
-            <button class="btn-sm btn-danger" data-delete="${escapeAttr(id)}">Delete</button>
           </td>`;
         tbody.appendChild(tr);
       });
 
     tbody.querySelectorAll("[data-edit]").forEach(b =>
       b.addEventListener("click", () => openModal(b.dataset.edit)));
-    tbody.querySelectorAll("[data-delete]").forEach(b =>
-      b.addEventListener("click", () => deleteQuiz(b.dataset.delete)));
   }
 
-  function applyMode() {
-    questionsBox.querySelectorAll(".q-block").forEach(b => {
-      b.querySelector(".q-text-field").style.display = guessMode ? "none" : "";
-      b.querySelector(".q-text").required = !guessMode;
-      b.querySelector(".q-clues").style.display = guessMode ? "" : "none";
-      b.querySelectorAll(".q-clue").forEach(c => { c.required = guessMode; });
-    });
-  }
-
-  function addQuestionBlock(data) {
+  // Isang tanong: Correct answer + 3 Wrong answers (walang radio button)
+  function addQuestionBlock(data, number) {
     const n = normalize(data);
-    qCounter++;
-    const id = "q" + qCounter;
-    const letters = ["A", "B", "C", "D"];
     const wrap = document.createElement("div");
     wrap.className = "q-block";
-    wrap.dataset.qid = id;
+    wrap.dataset.correct = String(n.correct); // posisyon ng tamang sagot (A-D) ay hindi nagbabago
+
+    const wrongs = n.options.filter((_, i) => i !== n.correct);
+
+    const head = guessMode
+      ? [1, 2, 3].map(i => `
+          <div class="field">
+            <input type="text" class="q-clue" placeholder="Clue ${i}" value="${escapeAttr(n["clue" + i])}" required>
+          </div>`).join("")
+      : `
+          <div class="field">
+            <input type="text" class="q-text" placeholder="e.g. What is the atomic number of Oxygen?" value="${escapeAttr(n.question)}" required>
+          </div>`;
 
     wrap.innerHTML = `
-      <div class="row-between">
-        <label style="margin:0">Question</label>
-        <button type="button" class="btn-ghost btn-sm" data-remove-q>Remove</button>
+      <label style="margin:0 0 6px;font-weight:600">${guessMode ? "Clues for question " : "Question "}${number}</label>
+      ${head}
+      <div class="field">
+        <label>Correct answer</label>
+        <input type="text" class="q-correct" placeholder="Correct answer" value="${escapeAttr(n.options[n.correct])}" required style="border-color:#2e9e5b">
       </div>
-      <div class="field q-text-field">
-        <input type="text" class="q-text" placeholder="e.g. What is the atomic number of Oxygen?" value="${escapeAttr(n.question)}">
+      <div class="field">
+        <label>Wrong answers</label>
+        ${[0, 1, 2].map(i => `
+          <input type="text" class="q-wrong" placeholder="Wrong answer ${i + 1}" value="${escapeAttr(wrongs[i] || "")}" required style="margin-bottom:6px">`).join("")}
       </div>
-      <div class="q-clues">
-        ${[1, 2, 3].map(i => `
-          <div class="field">
-            <input type="text" class="q-clue" placeholder="Clue ${i}" value="${escapeAttr(n["clue" + i])}">
-          </div>`).join("")}
-      </div>
-      ${n.options.map((opt, i) => `
-        <div class="opt-row">
-          <input type="radio" name="correct-${id}" value="${i}" ${i === n.correct ? "checked" : ""}>
-          <input type="text" class="q-opt" placeholder="Option ${letters[i]}" value="${escapeAttr(opt)}" required>
-        </div>`).join("")}
-      <p class="text-muted" style="margin:2px 0 0;font-size:.78rem">Select the radio button next to the correct answer.</p>
     `;
 
-    wrap.querySelector("[data-remove-q]").addEventListener("click", () => wrap.remove());
     questionsBox.appendChild(wrap);
-    applyMode();
   }
 
   // Each question in exactly the shape the game reads
   function collectQuestions() {
     return [...questionsBox.querySelectorAll(".q-block")].map(block => {
-      const opts = [...block.querySelectorAll(".q-opt")].map(i => i.value.trim());
-      const checked = block.querySelector("input[type=radio]:checked");
+      const correctIdx = Number(block.dataset.correct) || 0;
+      const correct = block.querySelector(".q-correct").value.trim();
+      const wrongs = [...block.querySelectorAll(".q-wrong")].map(i => i.value.trim());
+
+      // Ilagay ang tamang sagot sa dating posisyon niya, ang mali sa natitira
+      const opts = [];
+      let w = 0;
+      for (let i = 0; i < 4; i++) opts.push(i === correctIdx ? correct : wrongs[w++]);
+
       const rec = {
         optionA: opts[0], optionB: opts[1], optionC: opts[2], optionD: opts[3],
-        correctAnswer: checked ? Number(checked.value) : 0
+        correctAnswer: correctIdx
       };
       if (guessMode) {
         const clues = [...block.querySelectorAll(".q-clue")].map(i => i.value.trim());
@@ -150,52 +141,44 @@ AppAuth.requireRole("teacher", function (user, profile) {
   }
 
   function openModal(id) {
-    editingId = id || null;
+    const q = quizzes[id];
+    if (!q) return;
+    editingId = id;
     form.reset();
     questionsBox.innerHTML = "";
     hideAlert();
 
-    if (id) {
-      modalTitle.textContent = "Edit quiz";
-      const q = quizzes[id];
-      document.getElementById("qTitle").value = q.title || "";
-      document.getElementById("qDescription").value = q.description || "";
-      guessMode = isGuess(q, id);
-      guessToggle.checked = guessMode;
-      const questions = q.questions ? Object.values(q.questions) : [];
-      questions.forEach(addQuestionBlock);
-      if (questions.length === 0) addQuestionBlock();
-    } else {
-      modalTitle.textContent = "New quiz";
-      guessMode = false;
-      guessToggle.checked = false;
-      addQuestionBlock();
-    }
+    modalTitle.textContent = "Edit quiz";
+    document.getElementById("qTitle").value = q.title || "";
+    document.getElementById("qDescription").value = q.description || "";
+    guessMode = isGuess(q, id);
+
+    // Ayon sa pagkakasunod ng q0, q1, q2...
+    const keys = Object.keys(q.questions || {}).sort((a, b) =>
+      (parseInt(a.replace(/\D/g, ""), 10) || 0) - (parseInt(b.replace(/\D/g, ""), 10) || 0));
+    keys.forEach((k, i) => addQuestionBlock(q.questions[k], i + 1));
+
     modal.classList.remove("hidden");
   }
 
   function closeModal() { modal.classList.add("hidden"); editingId = null; }
 
-  function deleteQuiz(id) {
-    if (!confirm("Delete this quiz? Students will no longer see it in the app.")) return;
-    quizzesRef.child(id).remove();
-  }
-
   form.addEventListener("submit", e => {
     e.preventDefault();
+    if (!editingId) return;
+
     const title = document.getElementById("qTitle").value.trim();
     const description = document.getElementById("qDescription").value.trim();
     const questions = collectQuestions();
 
     if (!title) { showAlert("Give the quiz a title."); return; }
-    if (questions.length === 0) { showAlert("Add at least one question."); return; }
     for (const q of questions) {
       const opts = [q.optionA, q.optionB, q.optionC, q.optionD];
       const main = guessMode ? [q.clue1, q.clue2, q.clue3] : [q.question];
       if (main.some(v => !v) || opts.some(v => !v)) {
         showAlert(guessMode
-          ? "Every question needs its 3 clues and all four options filled in."
-          : "Every question needs its text and all four options filled in.");
+          ? "Every question needs its 3 clues, the correct answer and 3 wrong answers."
+          : "Every question needs its text, the correct answer and 3 wrong answers.");
         return;
       }
     }
@@ -210,14 +193,10 @@ AppAuth.requireRole("teacher", function (user, profile) {
       createdBy: user.uid, createdByName: profile.name || profile.email,
       updatedAt: firebase.database.ServerValue.TIMESTAMP
     };
-    const ref = editingId ? quizzesRef.child(editingId) : quizzesRef.push();
-    if (!editingId) record.createdAt = firebase.database.ServerValue.TIMESTAMP;
 
-    ref.update(record).then(closeModal).catch(err => showAlert(err.message));
+    quizzesRef.child(editingId).update(record).then(closeModal).catch(err => showAlert(err.message));
   });
 
-  document.getElementById("addBtn").addEventListener("click", () => openModal(null));
-  document.getElementById("addQuestionBtn").addEventListener("click", () => addQuestionBlock());
   document.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", closeModal));
 
   function showAlert(msg) { alertBox.textContent = msg; alertBox.classList.add("show"); }

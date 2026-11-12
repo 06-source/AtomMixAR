@@ -55,7 +55,8 @@
 
 
 
-    <!-- NEW: start -->
+    <div class="chart-grid" id="chartGrid"></div>
+
     <h2>Recent student activity</h2>
     <div class="card mt-16" style="padding:0; overflow:hidden; margin-bottom:28px">
       <table><thead><tr><th>Student</th><th>Quiz</th><th>Result</th><th>Date</th></tr></thead><tbody id="recentBody"></tbody></table>
@@ -94,37 +95,73 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/scores-util.js"></script>
+<script src="js/dash-charts.js"></script>
 <script>
   AppAuth.requireRole("admin", function () {
-    db.ref("students").on("value", s => {
-      document.getElementById("statStudents").textContent = Object.keys(s.val() || {}).length;
-    });
-
-    db.ref("staff").on("value", s => {
-      const staff = s.val() || {};
-      const teacherCount = Object.values(staff).filter(u => u.role === "teacher").length;
-      document.getElementById("statTeachers").textContent = teacherCount;
-    });
-    db.ref("quizzes").on("value", s => {
-      document.getElementById("statQuizzes").textContent = Object.keys(s.val() || {}).length;
-      // NEW: start
+    const $ = id => document.getElementById(id);
     const esc = x => String(x).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-    db.ref("scores").on("value", snap => {
-      const rows = ScoreUtil.list(snap.val());
-      document.getElementById("statResults").textContent = rows.length;
+    const norm = s => String(s || "").toUpperCase().replace(/\s+/g, " ").trim().replace(/\bPRIO\b/, "PIO");
+
+    $("chartGrid").innerHTML =
+      DashCharts.card("Students per section", "chSections") +
+      DashCharts.card("Staff accounts", "chStaff") +
+      DashCharts.card("Average score per quiz", "chQuizAvg") +
+      DashCharts.card("Quiz attempts (last 7 days)", "chAttempts");
+
+    let users = {}, roster = {}, staff = {}, quizzes = {}, rows = [];
+
+    function render() {
+      // Students = accounts the game saved at users/ (same as Students page)
+      $("statStudents").textContent = Object.keys(users).length;
+      const staffList = Object.values(staff);
+      const admins = staffList.filter(u => u.role === "admin").length;
+      const teachers = staffList.filter(u => u.role === "teacher").length;
+      const pending = staffList.filter(u => !u.role && u.requestedRole).length;
+      $("statTeachers").textContent = teachers;
+      $("statQuizzes").textContent = Object.keys(quizzes).length;
+
+      // Results
+      $("statResults").textContent = rows.length;
       const w = rows.filter(x => x.total);
-      document.getElementById("statAvg").textContent = w.length
-        ? Math.round(w.reduce((a, x) => a + x.score / x.total * 100, 0) / w.length) + "%" : "—";
-      const recent = rows.sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 5);
-      document.getElementById("recentEmpty").classList.toggle("hidden", recent.length > 0);
-      document.getElementById("recentBody").innerHTML = recent.map(x => `<tr>
+      $("statAvg").textContent = w.length
+        ? Math.round(w.reduce((s, x) => s + x.score / x.total * 100, 0) / w.length) + "%" : "—";
+
+      // Charts
+      const counts = {};
+      Object.keys(users).forEach(id => {
+        const sec = norm((roster[id] && roster[id].section) || users[id].section) || "NO SECTION";
+        counts[sec] = (counts[sec] || 0) + 1;
+      });
+      const secLabels = AppAuth.SECTIONS.filter(s => counts[norm(s)])
+        .concat(counts["NO SECTION"] ? ["No section"] : []);
+      DashCharts.draw("chSections", "bar", secLabels,
+        secLabels.map(s => counts[norm(s)] || 0), { horizontal: true, color: DashCharts.COLORS[0] });
+
+      DashCharts.draw("chStaff", "doughnut", ["Admins", "Teachers", "Pending"], [admins, teachers, pending],
+        { colors: [DashCharts.COLORS[0], DashCharts.COLORS[1], DashCharts.COLORS[3]] });
+
+      const q = DashCharts.avgByKey(rows, r => r.quizTitle);
+      DashCharts.draw("chQuizAvg", "bar", q.labels, q.values, { horizontal: true, pct: true, color: DashCharts.COLORS[2] });
+
+      const d = DashCharts.lastDays(rows, 7);
+      DashCharts.draw("chAttempts", "line", d.labels, d.counts, { color: DashCharts.COLORS[1] });
+
+      // Recent activity
+      const recent = rows.slice().sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 5);
+      $("recentEmpty").classList.toggle("hidden", recent.length > 0);
+      $("recentBody").innerHTML = recent.map(x => `<tr>
         <td>${esc(x.studentName || "—")}</td><td>${esc(x.quizTitle || "—")}</td>
         <td>${x.total ? x.score + " / " + x.total : "—"}</td>
         <td>${x.date ? new Date(x.date).toLocaleDateString() : "—"}</td></tr>`).join("");
-    });
-    // NEW: end
-    });
+    }
+
+    db.ref("users").on("value", s => { users = s.val() || {}; render(); });
+    db.ref("students").on("value", s => { roster = s.val() || {}; render(); });
+    db.ref("staff").on("value", s => { staff = s.val() || {}; render(); });
+    db.ref("quizzes").on("value", s => { quizzes = s.val() || {}; render(); });
+    ScoreUtil.watch(list => { rows = list; render(); });
   });
 </script>
 </body>
