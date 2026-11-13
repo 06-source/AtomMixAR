@@ -70,6 +70,29 @@
         Once students complete a quiz in the app, their scores will show up here.
       </div>
     </div>
+
+    <!-- Archived results: records of quizzes that were deleted/replaced -->
+    <div id="archiveSection" class="hidden" style="margin-top:32px">
+      <h2 style="margin:0 0 4px">Archived results</h2>
+      <p class="text-muted" style="font-size:.85rem;margin:0 0 10px">Results of quizzes that were replaced by a new quiz. They are kept here for your records.</p>
+      <div class="row" style="flex-wrap:wrap;margin:0 0 10px">
+        <input type="search" id="archSearch" placeholder="Search archived: CSC ID, section or quiz…" autocomplete="off" style="width:auto;min-width:300px">
+        <select id="archQuiz" style="width:auto;min-width:200px">
+          <option value="">All deleted quizzes</option>
+        </select>
+      </div>
+      <p class="text-muted" id="archNote" style="font-size:.85rem;margin:0 0 10px"></p>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>CSC ID</th><th>Section</th><th>Quiz (deleted)</th><th>Result</th><th>Date taken</th><th>Archived on</th></tr></thead>
+          <tbody id="archBody"></tbody>
+        </table>
+        <div class="empty hidden" id="archEmpty">
+          <strong>No archived results match</strong>
+          Try a different search or quiz filter.
+        </div>
+      </div>
+    </div>
   </main>
 
 </div>

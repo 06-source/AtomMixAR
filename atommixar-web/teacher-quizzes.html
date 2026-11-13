@@ -42,8 +42,9 @@
     <div class="topbar">
       <div>
         <h1>Quizzes</h1>
-        <p>These appear in the AtomMixAR app for students to take. Edit the questions and answers here.</p>
+        <p>These appear in the AtomMixAR app for students to take. The app always has 3 quizzes: edit them here, or use New quiz to replace a finished one.</p>
       </div>
+      <button type="button" class="btn-primary" id="newQuizBtn">+ New quiz</button>
     </div>
 
     <div class="card" style="padding:0; overflow:hidden;">
@@ -60,7 +61,24 @@
 
 </div>
 
-<!-- Edit quiz modal -->
+<!-- Pick the finished quiz to delete (New quiz step 1) -->
+<div class="modal-backdrop hidden" id="pickModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <h2>New quiz</h2>
+      <button class="btn-ghost btn-sm" data-close-pick>Close</button>
+    </div>
+    <p style="margin:0 0 12px">The app only has 3 quizzes. Choose the quiz that is already finished. It will be deleted, and your new quiz will take its place.</p>
+    <div id="pickAlert" class="alert alert-error"></div>
+    <div id="pickList"></div>
+    <div class="row">
+      <button type="button" class="btn-primary" id="pickDeleteBtn" disabled>Delete &amp; continue</button>
+      <button type="button" class="btn-ghost" data-close-pick>Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit / create quiz modal -->
 <div class="modal-backdrop hidden" id="quizModal">
   <div class="modal" style="max-width:560px">
     <div class="modal-head">
@@ -76,6 +94,16 @@
       <div class="field">
         <label for="qDescription">Description (optional)</label>
         <input type="text" id="qDescription">
+      </div>
+
+      <div class="field hidden" id="sectionsField">
+        <label>Who can see this quiz in the game?</label>
+        <p class="text-muted" style="font-size:.85rem;margin:0 0 8px">Tap the sections that can see and take this quiz. Only your sections are shown.</p>
+        <div class="row" style="gap:8px;margin-bottom:8px">
+          <button type="button" class="btn-ghost btn-sm" id="secAll">Select all</button>
+          <button type="button" class="btn-ghost btn-sm" id="secNone">Clear</button>
+        </div>
+        <div id="sectionsBox" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
 
       <div id="questionsContainer"></div>

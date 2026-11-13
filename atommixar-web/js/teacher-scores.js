@@ -4,6 +4,8 @@
  *   scores/{uid}/{quizID}/{pushId} = { studentID, quizID, score, totalQuestions, percentage, date, quizVersion }
  * Students are shown by CSC ID (the school email before the @); quiz titles from quizzes/{quizID}.
  * This page is read-only aside from removing bad/duplicate entries.
+ * ARCHIVED RESULTS: when a quiz is replaced (teacher-quizzes), its student records move to
+ *   quizArchive/{key}/results and are shown in the separate "Archived results" table below.
  *
  * SECTION FILTER: a teacher whose sections were set by the admin
  * (staff/{uid}/sections) only sees students from those sections.
@@ -27,6 +29,14 @@ AppAuth.requireRole("teacher", function (user, profile) {
   let scores = {};
   let users = {};
   let roster = {};
+  let archives = {};   // quizArchive/{key} = { title, archivedAt, results: {uid:{quizID:{pushId:rec}}} }
+
+  const archSection = document.getElementById("archiveSection");
+  const archBody = document.getElementById("archBody");
+  const archEmpty = document.getElementById("archEmpty");
+  const archNote = document.getElementById("archNote");
+  const archSearch = document.getElementById("archSearch");
+  const archQuiz = document.getElementById("archQuiz");
 
   // Para makuha ang email (CSC ID) ng bawat student
   db.ref("users").on("value", snap => {
@@ -46,7 +56,30 @@ AppAuth.requireRole("teacher", function (user, profile) {
     renderTable();
   });
 
+  // Mga record ng quiz na na-delete / napalitan
+  db.ref("quizArchive").on("value", snap => {
+    archives = snap.val() || {};
+    renderTable();
+  }, err => console.warn("Cannot read quizArchive (check database rules):", err));
+
+  // Flat list ng archived results (may title at petsa ng pag-archive)
+  function archivedList() {
+    const out = [];
+    Object.entries(archives).forEach(([key, a]) => {
+      if (!a || !a.results) return;
+      ScoreUtil.list(a.results, { users: users, quizzes: {} }).forEach(r => {
+        r.quizTitle = r.quizTitle || a.title || r.quizId;
+        r.archivedAt = a.archivedAt || 0;
+        r.archiveKey = key;
+        out.push(r);
+      });
+    });
+    return out;
+  }
+
   filterSelect.addEventListener("change", renderTable);
+  archSearch.addEventListener("input", () => renderArchive());
+  archQuiz.addEventListener("change", () => renderArchive());
   if (searchBox) searchBox.addEventListener("input", renderTable);
 
   // CSC ID = bahagi ng email bago ang @
@@ -153,6 +186,52 @@ AppAuth.requireRole("teacher", function (user, profile) {
     statTop.textContent = best
       ? `${best.id} (${best.pct}%)${best.quiz ? " · " + best.quiz : ""}`
       : "—";
+
+    renderArchive();
+  }
+
+  // Hiwalay na table: records ng mga quiz na na-delete na.
+  // May sariling search at quiz filter. Walang search: pinakabagong LIMIT lang.
+  function renderArchive() {
+    const all = archivedList().filter(isVisible);
+    archSection.classList.toggle("hidden", all.length === 0);
+    if (!all.length) return;
+
+    // Mga pangalan ng na-delete na quiz (para sa dropdown)
+    const titles = [...new Set(all.map(s => s.quizTitle).filter(Boolean))].sort();
+    const cur = archQuiz.value;
+    archQuiz.innerHTML = '<option value="">All deleted quizzes</option>' +
+      titles.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join("");
+    archQuiz.value = titles.includes(cur) ? cur : "";
+
+    const filter = archQuiz.value;
+    const q = archSearch.value.trim().toLowerCase();
+
+    const matches = all
+      .filter(s => !filter || s.quizTitle === filter)
+      .filter(s => !q || [cscId(s), sectionOf(s), s.quizTitle || ""].join(" ").toLowerCase().includes(q))
+      .sort((a, b) => (b.date || 0) - (a.date || 0));
+
+    const rows = (q || filter) ? matches : matches.slice(0, LIMIT);
+
+    if (!matches.length) archNote.textContent = "";
+    else if (q || filter) archNote.textContent = matches.length + " archived result" + (matches.length === 1 ? "" : "s") + " found";
+    else if (matches.length > LIMIT) archNote.textContent = "Showing the latest " + LIMIT + " of " + matches.length + " archived results. Use search to find anyone else.";
+    else archNote.textContent = matches.length + " archived result" + (matches.length === 1 ? "" : "s");
+
+    archEmpty.classList.toggle("hidden", rows.length > 0);
+
+    archBody.innerHTML = rows.map(s => {
+      const pct = s.total ? Math.round((s.score / s.total) * 100) : null;
+      return `<tr>
+        <td>${escapeHtml(cscId(s))}</td>
+        <td>${escapeHtml(sectionOf(s) || "—")}</td>
+        <td>${escapeHtml(s.quizTitle || "—")}</td>
+        <td>${s.total ? `${s.score} / ${s.total}${pct !== null ? ` (${pct}%)` : ""}` : (s.score ?? "—")}</td>
+        <td>${s.date ? new Date(s.date).toLocaleDateString() : "—"}</td>
+        <td>${s.archivedAt ? new Date(s.archivedAt).toLocaleDateString() : "—"}</td>
+      </tr>`;
+    }).join("");
   }
 
   function escapeHtml(str) {
