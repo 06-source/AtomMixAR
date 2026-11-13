@@ -5,6 +5,51 @@
  * Nobody gets dashboard access until an admin approves the request
  * (admin-teachers.html), which is what sets the real "role".
  */
+
+// =========================================================
+// PASSWORD POLICY (ginagamit din ng register.html para sa live checklist)
+// =========================================================
+const PasswordPolicy = (function () {
+  const MIN_LENGTH = 10;
+
+  // Kapag nasa loob ng password ang alinman dito, hindi ito papayagan
+  const COMMON = [
+    "password", "passw0rd", "p@ssw0rd", "qwerty", "asdfgh", "zxcvbn",
+    "123456", "654321", "111111", "000000", "abc123", "iloveyou",
+    "welcome", "letmein", "admin", "teacher", "atommixar", "cscqc",
+    "monkey", "dragon", "login", "unlock"
+  ];
+
+  function check(password, name, email) {
+    const p = password || "";
+    const lower = p.toLowerCase();
+
+    const emailUser = (email || "").split("@")[0].toLowerCase();
+    const nameParts = (name || "").toLowerCase().split(/\s+/);
+    const personal = [emailUser].concat(nameParts).filter(w => w.length >= 3);
+
+    return [
+      { label: "At least " + MIN_LENGTH + " characters", ok: p.length >= MIN_LENGTH },
+      { label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(p) },
+      { label: "A lowercase letter (a-z)", ok: /[a-z]/.test(p) },
+      { label: "A number (0-9)", ok: /[0-9]/.test(p) },
+      { label: "A special character (e.g. ! @ # $ %)", ok: /[^A-Za-z0-9\s]/.test(p) },
+      { label: "No spaces", ok: !/\s/.test(p) },
+      { label: "No 3 identical characters in a row", ok: !/(.)\1\1/.test(p) },
+      { label: "Not a common password", ok: !COMMON.some(w => lower.includes(w)) },
+      { label: "Doesn't contain your name or email", ok: !personal.some(w => lower.includes(w)) }
+    ];
+  }
+
+  // Ibinabalik ang unang rule na hindi pa natutupad, o null kung ayos na
+  function firstProblem(password, name, email) {
+    const bad = check(password, name, email).find(r => !r.ok);
+    return bad ? bad.label : null;
+  }
+
+  return { MIN_LENGTH, check, firstProblem };
+})();
+
 (function () {
   const form = document.getElementById("registerForm");
   const alertBox = document.getElementById("registerAlert");
@@ -17,7 +62,8 @@
 
   function friendly(err) {
     const map = {
-      "auth/weak-password": "Password must be at least 6 characters.",
+      "auth/weak-password": "Password is too weak. Please follow the password rules.",
+      "auth/password-does-not-meet-requirements": "Password doesn't meet the security requirements. Please follow the password rules.",
       "auth/invalid-email": "That email address isn't valid.",
       "auth/network-request-failed": "Network problem. Check your connection and try again."
     };
@@ -43,7 +89,14 @@
       showAlert("Please use your " + AppAuth.ALLOWED_DOMAIN + " school email.");
       return;
     }
-    if (password.length < 6) { showAlert("Password must be at least 6 characters."); return; }
+
+    // Mas mahigpit na password
+    const problem = PasswordPolicy.firstProblem(password, name, email);
+    if (problem) {
+      showAlert("Password too weak: " + problem + ".");
+      return;
+    }
+
     if (password !== confirm) { showAlert("The two passwords don't match."); return; }
 
     btn.disabled = true;
