@@ -1,19 +1,24 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Register — AtomMixAR</title>
+
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/login.css">
+
 <style>
   .password-container {
     position: relative;
   }
+
   .password-container input {
     width: 100%;
     padding-right: 45px;
   }
+
   .toggle-password {
     position: absolute;
     right: 12px;
@@ -28,9 +33,11 @@
     justify-content: center;
     color: #666;
   }
+
   .toggle-password:hover {
     color: #000;
   }
+
   .toggle-password svg {
     width: 20px;
     height: 20px;
@@ -45,129 +52,163 @@
     font-size: 12.5px;
     line-height: 1.7;
   }
+
   .pw-rules li {
     color: #888;
   }
+
   .pw-rules li::before {
     content: "○ ";
   }
+
   .pw-rules li.ok {
     color: #2e7d32;
   }
+
   .pw-rules li.ok::before {
     content: "✓ ";
   }
 </style>
 </head>
+
 <body class="login-page">
 
-  <div class="login-card">
-    <div class="login-brand">
-      <div class="brand-mark"></div>
-      <div>
-        <div class="brand-name">AtomMixAR</div>
-        <div class="brand-sub">Staff console</div>
+<div class="login-card">
+
+  <div class="login-brand">
+    <div class="brand-mark"></div>
+    <div>
+      <div class="brand-name">AtomMixAR</div>
+      <div class="brand-sub">Staff console</div>
+    </div>
+  </div>
+
+  <h1>Request an account</h1>
+
+  <p>
+    For teachers and admins. An admin approves each
+    request before you can sign in.
+  </p>
+
+  <div id="registerAlert" class="alert"></div>
+
+  <form id="registerForm">
+
+    <!-- FULL NAME -->
+    <div class="field">
+      <label for="name">Full name</label>
+      <input
+        type="text"
+        id="name"
+        required
+        autocomplete="name"
+      >
+    </div>
+
+    <!-- SCHOOL EMAIL -->
+    <div class="field">
+      <label for="email">School email</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="name@cscqc.edu.ph"
+        required
+        autocomplete="username"
+      >
+    </div>
+
+    <!-- ROLE -->
+    <div class="field">
+      <label for="role">I am registering as</label>
+
+      <select id="role">
+        <option value="teacher">Teacher</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    <!-- PASSWORD -->
+    <div class="field">
+      <label for="password">Password</label>
+
+      <div class="password-container">
+        <input
+          type="password"
+          id="password"
+          required
+          autocomplete="new-password"
+        >
+
+        <button
+          type="button"
+          class="toggle-password"
+          id="togglePassword"
+          title="Show password"
+          aria-label="Show password"
+        >
+          <svg id="eyeIcon1" viewBox="0 0 24 24">
+            <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.12c0-1.66-1.34-3-3-3l-.17.02z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- PASSWORD REQUIREMENTS -->
+      <ul id="pwRules" class="pw-rules"></ul>
+    </div>
+
+    <!-- CONFIRM PASSWORD -->
+    <div class="field">
+      <label for="confirm">Confirm password</label>
+
+      <div class="password-container">
+        <input
+          type="password"
+          id="confirm"
+          required
+          autocomplete="new-password"
+        >
+
+        <button
+          type="button"
+          class="toggle-password"
+          id="toggleConfirm"
+          title="Show password"
+          aria-label="Show password"
+        >
+          <svg id="eyeIcon2" viewBox="0 0 24 24">
+            <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.12c0-1.66-1.34-3-3-3l-.17.02z"/>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <h1>Request an account</h1>
-    <p>For teachers and admins. An admin approves each request before you can sign in.</p>
+    <!-- SUBMIT -->
+    <button
+      type="submit"
+      class="btn-primary"
+      id="registerBtn"
+    >
+      Request account
+    </button>
 
-    <div id="registerAlert" class="alert"></div>
+  </form>
 
-    <form id="registerForm">
-      <div class="field">
-        <label for="name">Full name</label>
-        <input type="text" id="name" required autocomplete="name">
-      </div>
-      <div class="field">
-        <label for="email">School email</label>
-        <input type="email" id="email" placeholder="name@cscqc.edu.ph" required autocomplete="username">
-      </div>
-      <div class="field">
-        <label for="role">I am registering as</label>
-        <select id="role">
-          <option value="teacher">Teacher</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <div class="password-container">
-          <input type="password" id="password" required autocomplete="new-password">
-          <button type="button" class="toggle-password" id="togglePassword" title="Show password">
-            <svg id="eyeIcon1" viewBox="0 0 24 24">
-              <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.12c0-1.66-1.34-3-3-3l-.17.02z"/>
-            </svg>
-          </button>
-        </div>
-        <ul id="pwRules" class="pw-rules"></ul>
-      </div>
-      <div class="field">
-        <label for="confirm">Confirm password</label>
-        <div class="password-container">
-          <input type="password" id="confirm" required autocomplete="new-password">
-          <button type="button" class="toggle-password" id="toggleConfirm" title="Show password">
-            <svg id="eyeIcon2" viewBox="0 0 24 24">
-              <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.12c0-1.66-1.34-3-3-3l-.17.02z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <button type="submit" class="btn-primary" id="registerBtn">Request account</button>
-    </form>
-
-    <div class="login-foot">Already approved? <a href="login.html">Sign in</a></div>
+  <div class="login-foot">
+    Already approved?
+    <a href="login.html">Sign in</a>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/register.js"></script>
-  <script>
-    // Open eye = password is visible. Slashed eye = password is hidden.
-    const EYE_OPEN = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
-    const EYE_CLOSED = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.12c0-1.66-1.34-3-3-3l-.17.02z"/>';
+</div>
 
-    function setupToggle(btnId, inputId, iconId) {
-      const btn = document.getElementById(btnId);
-      const input = document.getElementById(inputId);
-      const icon = document.getElementById(iconId);
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
 
-      btn.addEventListener("click", () => {
-        const isHidden = input.type === "password";
-        input.type = isHidden ? "text" : "password";
-        icon.innerHTML = isHidden ? EYE_OPEN : EYE_CLOSED;
-        btn.title = isHidden ? "Hide password" : "Show password";
-      });
-    }
+<!-- PROJECT SCRIPTS -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/register.js"></script>
 
-    setupToggle("togglePassword", "password", "eyeIcon1");
-    setupToggle("toggleConfirm", "confirm", "eyeIcon2");
-
-    // Live checklist ng password rules
-    const pwInput = document.getElementById("password");
-    const nameInput = document.getElementById("name");
-    const emailInput = document.getElementById("email");
-    const pwRules = document.getElementById("pwRules");
-
-    function renderRules() {
-      const rules = PasswordPolicy.check(
-        pwInput.value,
-        nameInput.value.trim(),
-        emailInput.value.trim()
-      );
-      pwRules.innerHTML = rules
-        .map(r => '<li class="' + (r.ok ? "ok" : "") + '">' + r.label + "</li>")
-        .join("");
-    }
-
-    pwInput.addEventListener("input", renderRules);
-    nameInput.addEventListener("input", renderRules);
-    emailInput.addEventListener("input", renderRules);
-    renderRules();
-  </script>
 </body>
 </html>
