@@ -1,14 +1,22 @@
 /**
  * AtomMixAR — Teacher: edit quizzes + replace a finished quiz with a new one.
  *
- * Laging 3 lang ang quiz (3 slot, gaya sa game). 10 tanong bawat isa.
- *  - Edit: baguhin ang laman ng quiz.
- *  - New quiz: piliin muna ang quiz na tapos na -> i-delete -> gumawa ng bago.
- *    Ang bagong quiz ay napupunta sa SAME Quiz ID ng na-delete, kaya hindi na
- *    kailangang baguhin ang Unity (tatlo pa rin ang quiz sa game).
+ * Laging 3 lang ang quiz SLOT (gaya sa game). 10 tanong bawat isa.
+ *  - Edit: baguhin ang laman ng quiz (kung lahat ng section nito ay hawak mo).
+ *  - New quiz: piliin ang quiz na tapos na -> i-replace -> gumawa ng bago.
  *
- * quizzes/{quizID} = { title, description, type, createdBy, createdByName, createdAt,
- *   questions: { q0: { question, optionA, optionB, optionC, optionD, correctAnswer (0-3) } } }
+ * PER-SECTION NA PAGPALIT:
+ *  Ang pagpalit ay para lang sa sections na hawak ng teacher. Ang records ng
+ *  estudyante sa ibang sections ay HINDI ginagalaw, at ang lumang quiz ay nananatili
+ *  para sa ibang sections hanggang sila mismo ang magpalit.
+ *
+ * quizzes/{quizID}                 = lumang / orihinal na quiz (quizID = slot, binabasa ng Unity)
+ * quizzes/{quizID}__{pushKey}      = bagong bersyon para sa ilang section lang, may field na slot
+ * Bawat quiz node: { title, description, type, slot?, sections: [...], createdBy, createdByName,
+ *   createdAt, updatedAt, questions: { q0: { question, optionA..D, correctAnswer (0-3) } } }
+ *
+ * NOTIFICATION: ang updatedAt ay sine-set sa bawat Edit AT sa bawat bagong quiz, kaya
+ * nagre-red ang bell ng mga estudyante sa sections ng quiz na iyon.
  *
  * "Guess the Element" quiz uses clue1, clue2, clue3 instead of "question".
  */
@@ -32,6 +40,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
     const mine = AppAuth.teacherSections(profile);
     return ALL_SECTIONS.filter(x => mine.includes(normSec(x)));
   }
+  const mySecs = () => availableSections().map(normSec);
 
   // Mga section na naka-save sa quiz (array o object) -> listahan ng pangalan
   function quizSections(q) {
@@ -56,7 +65,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
   const newQuizBtn = document.getElementById("newQuizBtn");
 
   let quizzes = {};
-  let editingId = null;
+  let editingId = null;   // sa edit: quiz key. sa create: ang SLOT
   let creating = false;
   let guessMode = false;
   let pickedId = null;
@@ -70,8 +79,38 @@ AppAuth.requireRole("teacher", function (user, profile) {
     renderTable();
   });
 
+  // ---------- Slot / section helpers ----------
+
+  // Aling slot (Quiz ID ng Unity) ang kinabibilangan ng quiz node
+  const slotOf = id => (quizzes[id] && quizzes[id].slot) || id;
+
+  const idsInSlot = slot => Object.keys(quizzes).filter(id => slotOf(id) === slot);
+
+  // Mga section ng teacher na WALANG quiz sa slot na ito (na-replace na, hindi pa napapalitan)
+  function uncovered(slot) {
+    const cov = new Set();
+    idsInSlot(slot).forEach(id => quizSections(quizzes[id]).forEach(s => cov.add(normSec(s))));
+    return availableSections().filter(s => !cov.has(normSec(s)));
+  }
+
+  // Mga slot na may section ng teacher na naghihintay ng bagong quiz
   function emptySlots() {
-    return Object.keys(SLOTS).filter(id => !quizzes[id]);
+    return Object.keys(SLOTS).filter(slot => uncovered(slot).length > 0);
+  }
+
+  // Kasali ba ang teacher sa quiz na ito? (may section siyang hawak dito, o wala pang sections ang quiz)
+  function involved(q) {
+    const secs = quizSections(q).map(normSec);
+    if (!secs.length) return true;
+    const mine = mySecs();
+    return secs.some(s => mine.includes(s));
+  }
+
+  // Pwede lang mag-edit kung LAHAT ng section ng quiz ay hawak mo.
+  // Kung may kasamang section ng ibang teacher, "New quiz" (replace) ang gamitin.
+  function canEdit(q) {
+    const mine = mySecs();
+    return quizSections(q).map(normSec).every(s => mine.includes(s));
   }
 
   // Reads a question in the game's format (or the older website format)
@@ -98,7 +137,8 @@ AppAuth.requireRole("teacher", function (user, profile) {
   }
 
   function renderTable() {
-    const ids = Object.keys(quizzes);
+    // Quiz lang na may kinalaman sa teacher na ito
+    const ids = Object.keys(quizzes).filter(id => involved(quizzes[id]));
     tbody.innerHTML = "";
     empty.classList.add("hidden");
 
@@ -110,26 +150,29 @@ AppAuth.requireRole("teacher", function (user, profile) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${escapeHtml(q.title || id)}<br>
-            <small class="text-muted">Quiz ID for Unity: <code>${escapeHtml(id)}</code></small><br>
+            <small class="text-muted">Quiz ID for Unity: <code>${escapeHtml(slotOf(id))}</code></small><br>
             <small class="text-muted">Visible to: ${escapeHtml(visibleText(q))}</small></td>
           <td>${count} question${count === 1 ? "" : "s"}</td>
           <td>${q.createdByName ? escapeHtml(q.createdByName) : "—"}</td>
           <td class="row">
-            <button class="btn-sm" data-edit="${escapeAttr(id)}">Edit</button>
+            ${canEdit(q)
+              ? `<button class="btn-sm" data-edit="${escapeAttr(id)}">Edit</button>`
+              : `<small class="text-muted">Shared with other sections. Use New quiz to replace it for your sections.</small>`}
           </td>`;
         tbody.appendChild(tr);
       });
 
-    // Walang laman na slot (na-delete na, hindi pa napapalitan)
-    emptySlots().forEach(id => {
+    // Mga slot na may section ng teacher na naghihintay ng bagong quiz
+    emptySlots().forEach(slot => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><em>Empty slot — waiting for a new quiz</em><br>
-          <small class="text-muted">Quiz ID for Unity: <code>${escapeHtml(id)}</code></small></td>
+        <td><em>No quiz yet — waiting for a new quiz</em><br>
+          <small class="text-muted">Quiz ID for Unity: <code>${escapeHtml(slot)}</code></small><br>
+          <small class="text-muted">Sections waiting: ${escapeHtml(uncovered(slot).join(", "))}</small></td>
         <td>0 questions</td>
         <td>—</td>
         <td class="row">
-          <button class="btn-sm" data-create="${escapeAttr(id)}">Create quiz</button>
+          <button class="btn-sm" data-create="${escapeAttr(slot)}">Create quiz</button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -142,7 +185,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
 
   function visibleText(q) {
     const secs = quizSections(q);
-    if (!secs.length) return "All sections";
+    if (!secs.length) return "No section yet (closed)";
     if (secs.length >= ALL_SECTIONS.length) return "All sections";
     return secs.join(", ");
   }
@@ -153,9 +196,9 @@ AppAuth.requireRole("teacher", function (user, profile) {
     label.style.fontWeight = cb.checked ? "600" : "400";
   }
 
-  // Mga section na pwedeng i-click (chips)
-  function renderSectionPicker(selected) {
-    availSecs = availableSections();
+  // Mga section na pwedeng i-click (chips). `only` = limitahan sa mga section na ito.
+  function renderSectionPicker(selected, only) {
+    availSecs = only || availableSections();
     sectionsBox.innerHTML = "";
     if (!availSecs.length) {
       sectionsBox.innerHTML = '<small class="text-muted">No sections are assigned to you yet. Ask the admin to assign your sections.</small>';
@@ -255,7 +298,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
   // ---------- Edit existing quiz ----------
   function openModal(id) {
     const q = quizzes[id];
-    if (!q) return;
+    if (!q || !canEdit(q)) return;
     editingId = id;
     creating = false;
     form.reset();
@@ -279,20 +322,21 @@ AppAuth.requireRole("teacher", function (user, profile) {
     modal.classList.remove("hidden");
   }
 
-  // ---------- Create new quiz in an empty slot ----------
-  function openCreate(slotId) {
-    if (!SLOTS[slotId] || quizzes[slotId]) return; // sa walang laman na slot lang
-    editingId = slotId;
+  // ---------- Create new quiz for the sections that have none ----------
+  function openCreate(slot) {
+    const secs = uncovered(slot);
+    if (!SLOTS[slot] || !secs.length) return; // may section lang na naghihintay
+    editingId = slot;   // sa create, ang slot ang laman nito
     creating = true;
     form.reset();
     questionsBox.innerHTML = "";
     hideAlert();
 
-    modalTitle.textContent = "New quiz (replaces the deleted quiz)";
-    guessMode = SLOTS[slotId] === "guess";
+    modalTitle.textContent = "New quiz (replaces the old quiz for your sections)";
+    guessMode = SLOTS[slot] === "guess";
 
-    // New quiz: piliin ng teacher kung sinong section ang makakakita
-    renderSectionPicker([]);
+    // Mga section lang na naghihintay ng bagong quiz ang pwedeng piliin
+    renderSectionPicker(secs, secs);
     sectionsField.classList.remove("hidden");
 
     for (let i = 0; i < QUESTIONS_PER_QUIZ; i++) {
@@ -346,22 +390,28 @@ AppAuth.requireRole("teacher", function (user, profile) {
       createdBy: user.uid, createdByName: profile.name || profile.email
     };
 
-    if (creating) record.sections = picked;
+    // Ang updatedAt ang nagpapa-red ng bell sa mga estudyante (sa Edit at sa bagong quiz)
+    record.updatedAt = firebase.database.ServerValue.TIMESTAMP;
 
     let op;
     if (creating) {
+      const slot = editingId;
+      // Kung libre ang mismong Quiz ID, doon ilagay. Kung may quiz pa roon para sa
+      // ibang section, gumawa ng hiwalay na node para hindi magalaw ang quiz nila.
+      const key = quizzes[slot] ? slot + "__" + quizzesRef.push().key : slot;
+      record.slot = slot;
+      record.sections = picked;
       record.createdAt = firebase.database.ServerValue.TIMESTAMP;
-      op = quizzesRef.child(editingId).set(record);
+      op = quizzesRef.child(key).set(record);
     } else {
-      record.updatedAt = firebase.database.ServerValue.TIMESTAMP;
       op = quizzesRef.child(editingId).update(record);
     }
     op.then(closeModal).catch(err => showAlert(err.message));
   });
 
-  // ---------- New quiz: choose finished quiz -> delete -> create ----------
+  // ---------- New quiz: choose finished quiz -> replace for MY sections -> create ----------
   newQuizBtn.addEventListener("click", () => {
-    // May walang laman na slot na? Diretso na sa paggawa ng bago.
+    // May section ka na bang naghihintay ng bagong quiz? Diretso na sa paggawa.
     const empties = emptySlots();
     if (empties.length) { openCreate(empties[0]); return; }
 
@@ -370,7 +420,7 @@ AppAuth.requireRole("teacher", function (user, profile) {
     pickAlert.classList.remove("show");
     pickList.innerHTML = "";
 
-    Object.keys(quizzes).forEach(id => {
+    Object.keys(quizzes).filter(id => involved(quizzes[id])).forEach(id => {
       const label = document.createElement("label");
       label.className = "pick-item";
       label.style.cssText = "display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;padding:14px 16px;border:1px solid #d5dde6;border-radius:10px;margin:0 0 10px;cursor:pointer;text-align:left;width:100%;box-sizing:border-box";
@@ -378,7 +428,8 @@ AppAuth.requireRole("teacher", function (user, profile) {
         <input type="radio" name="pickQuiz" value="${escapeAttr(id)}" style="width:18px;height:18px;min-width:18px;flex:none;margin:0;padding:0">
         <span style="flex:1;min-width:0;text-align:left;line-height:1.4;color:inherit">
           <strong style="display:block;font-weight:600">${escapeHtml(quizzes[id].title || id)}</strong>
-          <small class="text-muted">Quiz ID: <code>${escapeHtml(id)}</code></small>
+          <small class="text-muted">Quiz ID: <code>${escapeHtml(slotOf(id))}</code></small><br>
+          <small class="text-muted">Visible to: ${escapeHtml(visibleText(quizzes[id]))}</small>
         </span>`;
       label.querySelector("input").addEventListener("change", () => {
         pickedId = id;
@@ -399,41 +450,73 @@ AppAuth.requireRole("teacher", function (user, profile) {
   pickDeleteBtn.addEventListener("click", () => {
     if (!pickedId || !quizzes[pickedId]) return;
     const id = pickedId;
-    const title = quizzes[id].title || id;
+    const q = quizzes[id];
+    const slot = slotOf(id);
+    const title = q.title || id;
 
-    if (!confirm(`Delete "${title}"?\n\nThe quiz and its student results will be moved to "Archived results" on the Scores page. You will then create the new quiz that takes its place.`)) return;
+    const mine = mySecs();
+    const oldSecs = quizSections(q).map(normSec);
+
+    // replaced = mga section NA HAWAK MO na gumagamit ng quiz na ito (ito lang ang papalitan)
+    // kept     = mga section ng IBANG teacher (mananatili sa lumang quiz, hindi magagalaw)
+    const replaced = oldSecs.length ? oldSecs.filter(s => mine.includes(s)) : mine;
+    const kept = oldSecs.filter(s => !mine.includes(s));
+
+    if (!replaced.length) {
+      pickAlert.textContent = "You don't handle any section of this quiz.";
+      pickAlert.classList.add("show");
+      return;
+    }
+
+    const keptText = kept.length
+      ? `\n\nThese sections keep this quiz and their results: ${kept.map(displaySec).join(", ")}.`
+      : "";
+    if (!confirm(`Replace "${title}" for: ${replaced.map(displaySec).join(", ")}?\n\nOnly the results of students in these sections will be moved to "Archived results" on the Scores page. You will then create the new quiz for them.${keptText}`)) return;
 
     pickDeleteBtn.disabled = true;
 
-    // Lilipat sa quizArchive ang quiz AT ang lahat ng record ng mga estudyante nito.
-    // Isang write lang ito (all-or-nothing): kung pumalya, walang mabubura.
-    // Makikita ang mga lumang record sa Scores page, sa "Archived results".
     const archiveKey = db.ref("quizArchive").push().key;
 
-    db.ref("scores").once("value")
-      .then(snap => {
+    Promise.all([
+      db.ref("scores").once("value"),
+      db.ref("students").once("value"),
+      db.ref("users").once("value")
+    ])
+      .then(([scoresSnap, stSnap, usSnap]) => {
+        const roster = stSnap.val() || {};
+        const users = usSnap.val() || {};
+        // Section ng estudyante: students/{uid}/section, fallback users/{uid}/section
+        const secOf = uid => normSec(
+          (roster[uid] && roster[uid].section) || (users[uid] && users[uid].section) || "");
+
         const results = {};   // { uid: { quizID: { pushId: record } } }
         let count = 0;
         const updates = {};
 
-        snap.forEach(userSnap => {
-          const attempts = userSnap.child(id);
-          if (!attempts.exists()) return;
+        scoresSnap.forEach(userSnap => {
           const uid = userSnap.key;
+          // Estudyante sa ibang section: hindi gagalawin ang record
+          if (!replaced.includes(secOf(uid))) return;
+
+          const attempts = userSnap.child(slot);
+          if (!attempts.exists()) return;
+
           results[uid] = {};
-          results[uid][id] = {};
+          results[uid][slot] = {};
           attempts.forEach(a => {
             const rec = a.val() || {};
             rec.quizTitle = rec.quizTitle || title; // permanenteng pangalan ng lumang quiz
-            results[uid][id][a.key] = rec;
+            results[uid][slot][a.key] = rec;
             count++;
           });
-          updates["scores/" + uid + "/" + id] = null; // inalis sa kasalukuyang scores
+          updates["scores/" + uid + "/" + slot] = null; // inalis sa kasalukuyang scores
         });
 
-        const archived = Object.assign({}, quizzes[id], {
+        const archived = Object.assign({}, q, {
           originalQuizId: id,
+          slot: slot,
           title: title,
+          sections: replaced.map(displaySec),   // sections na napalitan
           resultsCount: count,
           archivedAt: firebase.database.ServerValue.TIMESTAMP,
           archivedBy: user.uid,
@@ -442,13 +525,20 @@ AppAuth.requireRole("teacher", function (user, profile) {
         if (count) archived.results = results;
 
         updates["quizArchive/" + archiveKey] = archived;
-        updates["quizzes/" + id] = null;
 
-        return db.ref().update(updates); // isang write: archive + records + delete
+        if (kept.length) {
+          // May ibang section pa na gumagamit: alisin lang ang sections mo sa lumang quiz
+          updates["quizzes/" + id + "/sections"] = kept.map(displaySec);
+        } else {
+          // Wala nang gumagamit: buong quiz ang aalisin
+          updates["quizzes/" + id] = null;
+        }
+
+        return db.ref().update(updates); // isang write: archive + records + quiz
       })
       .then(() => {
         pickModal.classList.add("hidden");
-        openCreate(id);
+        openCreate(slot);
       })
       .catch(err => {
         pickAlert.textContent = err.message;

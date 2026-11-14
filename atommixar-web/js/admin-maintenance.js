@@ -27,12 +27,16 @@ AppAuth.requireRole("admin", function () {
 
   $("clearBtn").addEventListener("click", () => {
     const days = Number($("ageSel").value);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+      note("Enter a whole number of days from 1 to 3650.");
+      return;
+    }
     const cutoff = Date.now() - days * 86400000;
     const updates = {};
     ScoreUtil.list(data.scores).forEach(r => { if (r.date && r.date < cutoff) updates[r.id] = null; });
     const n = Object.keys(updates).length;
-    if (!n) { note("No results are older than that."); return; }
-    if (!confirm("Permanently remove " + n + " quiz result" + (n === 1 ? "" : "s") + "?")) return;
+    if (!n) { note("No results are older than " + days + " day" + (days === 1 ? "" : "s") + "."); return; }
+    if (!confirm("Permanently remove " + n + " quiz result" + (n === 1 ? "" : "s") + " older than " + days + " day" + (days === 1 ? "" : "s") + "?")) return;
     db.ref("scores").update(updates)
       .then(() => note(n + " old result" + (n === 1 ? "" : "s") + " removed.", true))
       .catch(e => note(e.message));

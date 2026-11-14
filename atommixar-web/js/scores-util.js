@@ -3,12 +3,17 @@
  *
  * The Unity game saves each result at:
  *   scores/{uid}/{quizID}/{pushId} = { studentID, quizID, score, totalQuestions,
- *                                      percentage, date, (correctAnswers, wrongAnswers) }
+ *                                      percentage, date, quizVersion, quizKey,
+ *                                      (correctAnswers, wrongAnswers) }
+ *
+ * quizID  = ang slot (hal. "periodicTableQuiz")
+ * quizKey = ang quiz node na sinagutan ng estudyante (quizzes/{quizKey}); maaaring
+ *           iba sa quizID kapag napalitan ang quiz para sa ilang section lang.
  *
  * The game does NOT save the student's name or the quiz title, so they are
  * looked up here from:
  *   users/{uid}.username     (written by the game when a student registers)
- *   quizzes/{quizID}.title   (falls back to a readable version of the quiz ID)
+ *   quizzes/{quizKey}.title  (falls back to a readable version of the quiz ID)
  */
 const ScoreUtil = (function () {
 
@@ -36,7 +41,8 @@ const ScoreUtil = (function () {
       const uid = String(node.studentID || parts[0] || "");
       const quizId = String(node.quizID || parts[1] || "");
       const user = ctx.users[uid] || {};
-      const quiz = ctx.quizzes[quizId] || {};
+      // Gamitin ang mismong quiz na sinagutan (quizKey); kung wala (lumang score), ang slot
+      const quiz = ctx.quizzes[node.quizKey || quizId] || {};
 
       out.push({
         id: path,
